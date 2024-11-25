@@ -1,0 +1,202 @@
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import random
+import uuid
+
+app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Replace with a strong secret key
+
+# Dummy credentials
+USERNAME = "admin"
+PASSWORD = "password"
+
+# Dummy data for search results
+SEARCH_RESULTS = {
+    "TV": [
+        "Samsung 32 inch Smart TV",
+        "LG OLED 55 inch TV",
+        "Sony Bravia 50 inch TV",
+        "Panasonic 43 inch Smart TV",
+        "TCL 40 inch Full HD TV",
+        "Vizio 60 inch 4K TV",
+        "Sharp Aquos 50 inch TV",
+        "Philips 55 inch Smart TV",
+        "Hisense 65 inch TV",
+        "RCA 32 inch HD TV",
+        "Insignia 39 inch TV",
+        "Toshiba Fire TV 43 inch"
+    ],
+    "Mobile": [
+        "iPhone 14 Pro Max",
+        "Samsung Galaxy S23 Ultra",
+        "OnePlus Nord 3",
+        "Google Pixel 8",
+        "Xiaomi Mi 13",
+        "Oppo Reno 10 Pro",
+        "Vivo X80 Pro",
+        "Motorola Edge 40",
+        "Realme GT 3",
+        "Asus ROG Phone 7",
+        "Nokia XR20",
+        "Sony Xperia 1 IV"
+    ],
+    "Washing Machine": [
+        "Whirlpool 7kg Fully Automatic",
+        "LG 8kg Front Load",
+        "Samsung 6.5kg Top Load",
+        "Bosch 7kg Front Load",
+        "IFB 6kg Front Load",
+        "Haier 6.2kg Semi-Automatic",
+        "Godrej 7kg Top Load",
+        "Panasonic 6.5kg Fully Automatic",
+        "Electrolux 8kg Front Load",
+        "Onida 7.5kg Semi-Automatic",
+        "Beko 7kg Washer Dryer Combo",
+        "Miele 9kg Premium Washer"
+    ],
+    "Laptop": [
+        "Dell XPS 13",
+        "MacBook Pro 16-inch",
+        "HP Spectre x360",
+        "Lenovo ThinkPad X1 Carbon",
+        "Asus ROG Zephyrus G14",
+        "Acer Predator Helios 300",
+        "Microsoft Surface Laptop 5",
+        "Razer Blade 15",
+        "Samsung Galaxy Book3 Pro",
+        "MSI Creator Z16",
+        "Gigabyte Aero 16",
+        "Alienware m15 R6"
+    ],
+    "Headphone": [
+        "Sony WH-1000XM5",
+        "Bose QuietComfort 45",
+        "Apple AirPods Max",
+        "Sennheiser Momentum 4",
+        "Jabra Elite 85h",
+        "Beats Studio 3",
+        "Skullcandy Crusher ANC",
+        "Bowers & Wilkins PX7",
+        "Audio-Technica ATH-M50xBT",
+        "Philips PH805",
+        "AKG N700NC M2",
+        "JBL Live 660NC"
+    ],
+    "Smartphone": [
+        "iPhone 15 Pro",
+        "Samsung Galaxy Z Fold 5",
+        "OnePlus 12",
+        "Google Pixel Fold",
+        "Xiaomi Redmi Note 13 Pro",
+        "Realme Narzo 60 Pro",
+        "Vivo V29 Pro",
+        "Oppo Find X6 Pro",
+        "Nokia G60 5G",
+        "Motorola Razr 2023",
+        "Asus ZenFone 10",
+        "Sony Xperia 5 V"
+    ]
+}
+
+# Routes
+@app.route('/')
+def login():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login_submit():
+    username = request.form.get('username')
+    password = request.form.get('password')
+
+    if username == USERNAME and password == PASSWORD:
+        session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
+        return redirect(url_for('search'))
+    else:
+        flash('Invalid username or password')
+        return redirect(url_for('login'))
+
+@app.route('/search')
+def search():
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    return render_template('search.html')
+
+@app.route('/search_results', methods=['GET', 'POST'])
+def search_results():
+    # Check if the user is logged in (session ID validation)
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Handle GET request (e.g., direct URL access)
+    if request.method == 'GET':
+        flash('Please perform a search first.')
+        return redirect(url_for('search'))
+
+    category = request.form.get('category')
+    query = request.form.get('query').lower() if request.form.get('query') else None
+
+    results = []
+    if query:
+        # Perform free text search across all categories
+        for items in SEARCH_RESULTS.values():
+            results.extend([item for item in items if query in item.lower()])
+    elif category:
+        # Retrieve items from the selected category
+        results = SEARCH_RESULTS.get(category, [])
+
+    random.shuffle(results)  # Randomize results
+    return render_template('search_results.html', results=results)
+
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    item = request.form.get('item')
+    if 'cart' not in session:
+        session['cart'] = []
+
+    session['cart'].append(item)
+    session.modified = True
+    flash(f'Added {item} to cart.')
+    return redirect(url_for('cart'))
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    # Check if the user is logged in (session ID validation)
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    # Retrieve the item to be removed from the form data
+    item = request.form.get('item')
+
+    # Check if the item exists in the cart and remove it
+    if 'cart' in session and item in session['cart']:
+        session['cart'].remove(item)  # Remove the item
+        session.modified = True  # Mark the session as modified
+        flash(f'Removed {item} from cart.')  # Optional: Add a success message
+
+    # Redirect the user back to the cart page
+    return redirect(url_for('cart'))
+
+@app.route('/cart')
+def cart():
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    cart_items = session.get('cart', [])
+    return render_template('cart.html', cart_items=cart_items)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out successfully.')
+    return redirect(url_for('login'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
