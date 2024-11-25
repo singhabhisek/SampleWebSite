@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        table {
+            width: 70%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #2980b9;
+            color: white;
+        }
+        td {
+            background-color: #ffffff;
+        }
+        button {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #218c53;
+        }
+        a {
+            display: inline-block;
+            margin: 10px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #1abc9c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search Results</h1>
+    <table>
+        <tr>
+            <th>Item</th>
+            <th>Action</th>
+        </tr>
+        {% for item in results %}
+        <tr>
+            <td>{{ item }}</td>
+            <td>
+                <form method="POST" action="/add_to_cart">
+                    <input type="hidden" name="item" value="{{ item }}">
+                    <button type="submit">Add to Cart</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        form {
+            margin-top: 20px;
+            display: inline-block;
+            text-align: left;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        select, input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        a {
+            margin: 10px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+        a:hover {
+            color: #1abc9c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Search Page</h1>
+    <form method="POST" action="/search_results">
+        <label for="category">Category:</label>
+        <select id="category" name="category">
+            <option value="TV">TV</option>
+            <option value="Mobile">Mobile</option>
+            <option value="Washing Machine">Washing Machine</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Headphone">Headphone</option>
+            <option value="Smartphone">Smartphone</option>
+        </select>
+        <label for="query">Free Search:</label>
+        <input type="text" id="query" name="query" placeholder="Type to search...">
+        <button type="submit">Search</button>
+    </form>
+    <br>
+    <a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
+</body>
+</html>
