@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import random
 import uuid
+from flask import Flask, request, jsonify, make_response
+from xml.etree.ElementTree import Element, tostring
+
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a strong secret key
@@ -46,25 +49,11 @@ SEARCH_RESULTS = {
         "Bosch 7kg Front Load",
         "IFB 6kg Front Load",
         "Haier 6.2kg Semi-Automatic",
-        "Godrej 7kg Top Load",
-        "Panasonic 6.5kg Fully Automatic",
-        "Electrolux 8kg Front Load",
-        "Onida 7.5kg Semi-Automatic",
-        "Beko 7kg Washer Dryer Combo",
         "Miele 9kg Premium Washer"
     ],
     "Laptop": [
         "Dell XPS 13",
         "MacBook Pro 16-inch",
-        "HP Spectre x360",
-        "Lenovo ThinkPad X1 Carbon",
-        "Asus ROG Zephyrus G14",
-        "Acer Predator Helios 300",
-        "Microsoft Surface Laptop 5",
-        "Razer Blade 15",
-        "Samsung Galaxy Book3 Pro",
-        "MSI Creator Z16",
-        "Gigabyte Aero 16",
         "Alienware m15 R6"
     ],
     "Headphone": [
@@ -85,17 +74,139 @@ SEARCH_RESULTS = {
         "iPhone 15 Pro",
         "Samsung Galaxy Z Fold 5",
         "OnePlus 12",
-        "Google Pixel Fold",
-        "Xiaomi Redmi Note 13 Pro",
-        "Realme Narzo 60 Pro",
-        "Vivo V29 Pro",
-        "Oppo Find X6 Pro",
-        "Nokia G60 5G",
-        "Motorola Razr 2023",
-        "Asus ZenFone 10",
-        "Sony Xperia 5 V"
+        "Google Pixel Fold"
     ]
 }
+
+
+# Static employee data
+EMPLOYEE_DATA = [
+    {"employeeID": 101, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "9876543210", "address": "123 Elm Street"},
+    {"employeeID": 102, "firstName": "Jane", "lastName": "Smith", "homePhone": None, "officePhone": "2345678901", "address": "456 Oak Avenue"},
+    {"employeeID": 103, "firstName": "Alice", "lastName": "Brown", "homePhone": "3456789012", "officePhone": None, "address": "789 Pine Lane"},
+    {"employeeID": 104, "firstName": "Bob", "lastName": "Johnson", "homePhone": "4567890123", "officePhone": "5678901234", "address": "135 Cedar Blvd"},
+    {"employeeID": 105, "firstName": "Charlie", "lastName": "Davis", "homePhone": "5678901234", "officePhone": None, "address": "246 Maple Court"},
+    {"employeeID": 106, "firstName": "Diana", "lastName": "Evans", "homePhone": None, "officePhone": "6789012345", "address": "357 Birch Drive"},
+    {"employeeID": 107, "firstName": "Eve", "lastName": "Williams", "homePhone": "6789012345", "officePhone": "7890123456", "address": "468 Palm Street"},
+    {"employeeID": 108, "firstName": "Frank", "lastName": "Taylor", "homePhone": "7890123456", "officePhone": None, "address": "579 Redwood Lane"},
+    {"employeeID": 109, "firstName": "Grace", "lastName": "Harris", "homePhone": None, "officePhone": "8901234567", "address": "680 Sequoia Way"},
+    {"employeeID": 110, "firstName": "Henry", "lastName": "Clark", "homePhone": "8901234567", "officePhone": "9012345678", "address": "791 Spruce Drive"}
+]
+
+EMPLOYMENT_DETAILS = {
+    101: {"departmentName": "Engineering", "companyName": "TechCorp"},
+    102: {"departmentName": "Marketing", "companyName": "Brand Inc."},
+    103: {"departmentName": "HR", "companyName": "PeopleFirst"},
+    104: {"departmentName": "Finance", "companyName": "MoneyMatters"},
+    105: {"departmentName": "Sales", "companyName": "SalesForce"},
+    106: {"departmentName": "R&D", "companyName": "InnovateCo"},
+    107: {"departmentName": "IT", "companyName": "TechSupport"},
+    108: {"departmentName": "Operations", "companyName": "OperateNow"},
+    109: {"departmentName": "Logistics", "companyName": "ShipQuick"},
+    110: {"departmentName": "Admin", "companyName": "OfficeWorks"}
+}
+
+
+# Utility function for XML error response
+def generate_xml_error(error_code, error_desc, first_name=None, last_name=None):
+    root = Element('ErrorResponse')
+    error_code_elem = Element('errorCode')
+    error_code_elem.text = str(error_code)
+    error_desc_elem = Element('errorDescription')
+    error_desc_elem.text = error_desc
+
+    root.append(error_code_elem)
+    root.append(error_desc_elem)
+
+    if first_name:
+        first_name_elem = Element('firstName')
+        first_name_elem.text = first_name
+        root.append(first_name_elem)
+
+    if last_name:
+        last_name_elem = Element('lastName')
+        last_name_elem.text = last_name
+        root.append(last_name_elem)
+
+    response = make_response(tostring(root), error_code)
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/api/employee_info', methods=['POST'])
+def employee_info():
+    # Check for SOAPAction header
+    if 'SOAPAction' not in request.headers:
+        return generate_xml_error(403, "Forbidden: Missing SOAPAction header.")
+
+    # Parse XML input
+    if request.content_type != 'application/xml':
+        return generate_xml_error(400, "Invalid content type. Please provide XML input.")
+
+    xml_data = request.data
+    try:
+        # Parse input XML
+        from xml.etree.ElementTree import fromstring
+        input_data = fromstring(xml_data)
+        first_name = input_data.find('firstName').text
+        last_name = input_data.find('lastName').text
+
+        # Search for the employee
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name), None)
+        if not employee:
+            return generate_xml_error(404, "Employee not found.", first_name, last_name)
+
+        # Build XML response
+        root = Element('EmployeeDetails')
+
+        # Add basic employee fields
+        for key in ['employeeID', 'firstName', 'lastName', 'address']:
+            child = Element(key)
+            child.text = str(employee[key]) if employee[key] else "N/A"
+            root.append(child)
+
+        # Add phone numbers as nested XML
+        phone_numbers = Element('phoneNumbers')
+        home_phone = Element('homePhone')
+        home_phone.text = employee['homePhone'] if employee['homePhone'] else "N/A"
+        office_phone = Element('officePhone')
+        office_phone.text = employee['officePhone'] if employee['officePhone'] else "N/A"
+
+        phone_numbers.append(home_phone)
+        phone_numbers.append(office_phone)
+        root.append(phone_numbers)
+
+        # Generate response
+        response = make_response(tostring(root), 200)
+        response.headers['Content-Type'] = 'application/xml'
+        return response
+
+    except Exception as e:
+        return generate_xml_error(500, f"Error processing request: {str(e)}")
+
+
+# API 2: Get employment details based on employeeID
+@app.route('/api/employment_details', methods=['POST'])
+def employment_details():
+    # Check for APIAuth header
+    if 'APIAuth' not in request.headers:
+        return make_response(jsonify({"error": "Forbidden: Missing APIAuth header."}), 403)
+
+    try:
+        data = request.get_json()
+        if not data or 'employeeID' not in data:
+            return jsonify({"error": "Invalid request. Please provide employeeID."}), 400
+
+        employee_id = data['employeeID']
+        # Search for employment details
+        details = EMPLOYMENT_DETAILS.get(employee_id)
+        if not details:
+            return jsonify({"error": "Employee ID not found"}), 404
+
+        # Return JSON response
+        return jsonify({"status_code": 200, "details": details}), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Error processing request: {str(e)}"}), 500
 
 # Routes
 @app.route('/')
