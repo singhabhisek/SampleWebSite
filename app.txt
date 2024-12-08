@@ -70,11 +70,11 @@ SEARCH_RESULTS = {
         "AKG N700NC M2",
         "JBL Live 660NC"
     ],
-    "Smartphone": [
-        "iPhone 15 Pro",
-        "Samsung Galaxy Z Fold 5",
-        "OnePlus 12",
-        "Google Pixel Fold"
+    "Smartwatch": [
+        "iWatch 15 Pro",
+        "Samsung Watch Z Fold 5",
+        "OnePlus Watch 12",
+        "Google Watch Fold"
     ]
 }
 
@@ -210,28 +210,75 @@ def employment_details():
 
 # Routes
 @app.route('/')
-def login():
+def loginDefault():
     return render_template('login.html')
 
-@app.route('/login', methods=['POST'])
-def login_submit():
-    username = request.form.get('username')
-    password = request.form.get('password')
+# @app.route('/login', methods=['POST'])
+# def login_submit():
+#     username = request.form.get('username')
+#     password = request.form.get('password')
+#
+#     if username == USERNAME and password == PASSWORD:
+#         session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
+#         return redirect(url_for('search'))
+#     else:
+#         flash('Invalid username or password')
+#         return redirect(url_for('login'))
 
-    if username == USERNAME and password == PASSWORD:
-        session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
-        return redirect(url_for('search'))
-    else:
-        flash('Invalid username or password')
+
+# Predefined user credentials and their allowed product categories
+USERS = {
+    "user1": {"password": "pass1", "products": ["TV", "Washing Machine"]},
+    "user2": {"password": "pass2", "products": ["TV", "Smartwatch"]},
+    "user3": {"password": "pass3", "products": ["Washing Machine", "Smartwatch", "Headphone"]},
+    "user4": {"password": "pass4", "products": ["TV", "Washing Machine", "Smartwatch"]},
+    "user5": {"password": "pass5", "products": ["TV", "Smartwatch", "Headphone", "Laptop"]},
+    "user6": {"password": "pass6", "products": ["Washing Machine", "Laptop", "Smartwatch"]},
+    "user7": {"password": "pass7", "products": ["TV", "Washing Machine", "Headphone"]},
+    "user8": {"password": "pass8", "products": ["TV", "Mobile", "Headphone", "Smartphone"]},
+    "user9": {"password": "pass9", "products": ["Smartwatch", "Mobile", "Washing Machine"]},
+    "user10": {"password": "pass10", "products": ["TV", "Washing Machine", "Smartwatch", "Headphone", "Laptop"]},
+}
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Authenticate user
+        user = USERS.get(username)
+        if user and user['password'] == password:
+            session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
+            session['username'] = username  # Store username in session
+            flash('Login successful.')
+            return redirect(url_for('search'))
+
+        flash('Invalid username or password. Please try again.')
         return redirect(url_for('login'))
 
-@app.route('/search')
+    return render_template('login.html')
+#
+# @app.route('/search')
+# def search():
+#     if 'session_id' not in session:
+#         flash('You need to login first.')
+#         return redirect(url_for('login'))
+#
+#     return render_template('search.html')
+
+@app.route('/search', methods=['GET', 'POST'])
 def search():
-    if 'session_id' not in session:
-        flash('You need to login first.')
+    # Check if the user is logged in
+    if 'session_id' not in session or 'username' not in session:
+        flash('You need to log in first.')
         return redirect(url_for('login'))
 
-    return render_template('search.html')
+    # Retrieve the logged-in user's allowed products
+    username = session['username']
+    user_products = USERS[username]['products']
+
+    return render_template('search.html', products=user_products)
 
 @app.route('/search_results', methods=['GET', 'POST'])
 def search_results():
