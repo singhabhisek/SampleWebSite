@@ -2,8 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import random
 import uuid
 from flask import Flask, request, jsonify, make_response
-from xml.etree.ElementTree import Element, tostring
-
+from xml.etree.ElementTree import Element, tostring, fromstring, SubElement
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Replace with a strong secret key
@@ -78,74 +77,291 @@ SEARCH_RESULTS = {
     ]
 }
 
+#
+# # Static employee data
+# EMPLOYEE_DATA = [
+#     {"employeeID": 101, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "9876543210", "address": "123 Elm Street"},
+#     {"employeeID": 102, "firstName": "Jane", "lastName": "Smith", "homePhone": None, "officePhone": "2345678901", "address": "456 Oak Avenue"},
+#     {"employeeID": 103, "firstName": "Alice", "lastName": "Brown", "homePhone": "3456789012", "officePhone": None, "address": "789 Pine Lane"},
+#     {"employeeID": 104, "firstName": "Bob", "lastName": "Johnson", "homePhone": "4567890123", "officePhone": "5678901234", "address": "135 Cedar Blvd"},
+#     {"employeeID": 105, "firstName": "Charlie", "lastName": "Davis", "homePhone": "5678901234", "officePhone": None, "address": "246 Maple Court"},
+#     {"employeeID": 106, "firstName": "Diana", "lastName": "Evans", "homePhone": None, "officePhone": "6789012345", "address": "357 Birch Drive"},
+#     {"employeeID": 107, "firstName": "Eve", "lastName": "Williams", "homePhone": "6789012345", "officePhone": "7890123456", "address": "468 Palm Street"},
+#     {"employeeID": 108, "firstName": "Frank", "lastName": "Taylor", "homePhone": "7890123456", "officePhone": None, "address": "579 Redwood Lane"},
+#     {"employeeID": 109, "firstName": "Grace", "lastName": "Harris", "homePhone": None, "officePhone": "8901234567", "address": "680 Sequoia Way"},
+#     {"employeeID": 110, "firstName": "Henry", "lastName": "Clark", "homePhone": "8901234567", "officePhone": "9012345678", "address": "791 Spruce Drive"}
+# ]
+#
+# EMPLOYMENT_DETAILS = {
+#     101: {"departmentName": "Engineering", "companyName": "TechCorp"},
+#     102: {"departmentName": "Marketing", "companyName": "Brand Inc."},
+#     103: {"departmentName": "HR", "companyName": "PeopleFirst"},
+#     104: {"departmentName": "Finance", "companyName": "MoneyMatters"},
+#     105: {"departmentName": "Sales", "companyName": "SalesForce"},
+#     106: {"departmentName": "R&D", "companyName": "InnovateCo"},
+#     107: {"departmentName": "IT", "companyName": "TechSupport"},
+#     108: {"departmentName": "Operations", "companyName": "OperateNow"},
+#     109: {"departmentName": "Logistics", "companyName": "ShipQuick"},
+#     110: {"departmentName": "Admin", "companyName": "OfficeWorks"}
+# }
+#
+#
+# # Utility function for XML error response
+# def generate_xml_error(error_code, error_desc, first_name=None, last_name=None):
+#     root = Element('ErrorResponse')
+#     error_code_elem = Element('errorCode')
+#     error_code_elem.text = str(error_code)
+#     error_desc_elem = Element('errorDescription')
+#     error_desc_elem.text = error_desc
+#
+#     root.append(error_code_elem)
+#     root.append(error_desc_elem)
+#
+#     if first_name:
+#         first_name_elem = Element('firstName')
+#         first_name_elem.text = first_name
+#         root.append(first_name_elem)
+#
+#     if last_name:
+#         last_name_elem = Element('lastName')
+#         last_name_elem.text = last_name
+#         root.append(last_name_elem)
+#
+#     response = make_response(tostring(root), error_code)
+#     response.headers['Content-Type'] = 'application/xml'
+#     return response
+#
+# @app.route('/api/employee_info', methods=['POST'])
+# def employee_info():
+#     # Check for SOAPAction header
+#     if 'SOAPAction' not in request.headers:
+#         return generate_xml_error(403, "Forbidden: Missing SOAPAction header.")
+#
+#     # Parse XML input
+#     if request.content_type != 'application/xml':
+#         return generate_xml_error(400, "Invalid content type. Please provide XML input.")
+#
+#     xml_data = request.data
+#     try:
+#         # Parse input XML
+#         from xml.etree.ElementTree import fromstring
+#         input_data = fromstring(xml_data)
+#         first_name = input_data.find('firstName').text
+#         last_name = input_data.find('lastName').text
+#
+#         # Search for the employee
+#         employee = next((emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name), None)
+#         if not employee:
+#             return generate_xml_error(404, "Employee not found.", first_name, last_name)
+#
+#         # Build XML response
+#         root = Element('EmployeeDetails')
+#
+#         # Add basic employee fields
+#         for key in ['employeeID', 'firstName', 'lastName', 'address']:
+#             child = Element(key)
+#             child.text = str(employee[key]) if employee[key] else "N/A"
+#             root.append(child)
+#
+#         # Add phone numbers as nested XML
+#         phone_numbers = Element('phoneNumbers')
+#         home_phone = Element('homePhone')
+#         home_phone.text = employee['homePhone'] if employee['homePhone'] else "N/A"
+#         office_phone = Element('officePhone')
+#         office_phone.text = employee['officePhone'] if employee['officePhone'] else "N/A"
+#
+#         phone_numbers.append(home_phone)
+#         phone_numbers.append(office_phone)
+#         root.append(phone_numbers)
+#
+#         # Generate response
+#         response = make_response(tostring(root), 200)
+#         response.headers['Content-Type'] = 'application/xml'
+#         return response
+#
+#     except Exception as e:
+#         return generate_xml_error(500, f"Error processing request: {str(e)}")
+#
+#
+# # API 2: Get employment details based on employeeID
+# @app.route('/api/employment_details', methods=['POST'])
+# def employment_details():
+#     # Check for APIAuth header
+#     if 'APIAuth' not in request.headers:
+#         return make_response(jsonify({"error": "Forbidden: Missing APIAuth header."}), 403)
+#
+#     try:
+#         data = request.get_json()
+#         if not data or 'employeeID' not in data:
+#             return jsonify({"error": "Invalid request. Please provide employeeID."}), 400
+#
+#         employee_id = data['employeeID']
+#         # Search for employment details
+#         details = EMPLOYMENT_DETAILS.get(employee_id)
+#         if not details:
+#             return jsonify({"error": "Employee ID not found"}), 404
+#
+#         # Return JSON response
+#         return jsonify({"status_code": 200, "details": details}), 200
+#
+#     except Exception as e:
+#         return jsonify({"error": f"Error processing request: {str(e)}"}), 500
 
-# Static employee data
+
+#Employee Data
+
 EMPLOYEE_DATA = [
-    {"employeeID": 101, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "9876543210", "address": "123 Elm Street"},
-    {"employeeID": 102, "firstName": "Jane", "lastName": "Smith", "homePhone": None, "officePhone": "2345678901", "address": "456 Oak Avenue"},
-    {"employeeID": 103, "firstName": "Alice", "lastName": "Brown", "homePhone": "3456789012", "officePhone": None, "address": "789 Pine Lane"},
-    {"employeeID": 104, "firstName": "Bob", "lastName": "Johnson", "homePhone": "4567890123", "officePhone": "5678901234", "address": "135 Cedar Blvd"},
-    {"employeeID": 105, "firstName": "Charlie", "lastName": "Davis", "homePhone": "5678901234", "officePhone": None, "address": "246 Maple Court"},
-    {"employeeID": 106, "firstName": "Diana", "lastName": "Evans", "homePhone": None, "officePhone": "6789012345", "address": "357 Birch Drive"},
-    {"employeeID": 107, "firstName": "Eve", "lastName": "Williams", "homePhone": "6789012345", "officePhone": "7890123456", "address": "468 Palm Street"},
-    {"employeeID": 108, "firstName": "Frank", "lastName": "Taylor", "homePhone": "7890123456", "officePhone": None, "address": "579 Redwood Lane"},
-    {"employeeID": 109, "firstName": "Grace", "lastName": "Harris", "homePhone": None, "officePhone": "8901234567", "address": "680 Sequoia Way"},
-    {"employeeID": 110, "firstName": "Henry", "lastName": "Clark", "homePhone": "8901234567", "officePhone": "9012345678", "address": "791 Spruce Drive"}
+    {"employeeID": 1, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890",
+     "officePhone": "9876543210", "address": "123 Elm Street"},
+    {"employeeID": 2, "firstName": "Jane", "lastName": "Smith", "homePhone": None,
+     "officePhone": "9876543201", "address": "456 Oak Avenue"},
+    {"employeeID": 3, "firstName": "Alice", "lastName": "Johnson", "homePhone": "5678901234",
+     "officePhone": None, "address": "789 Maple Lane"},
+    {"employeeID": 4, "firstName": "Bob", "lastName": "Brown", "homePhone": "1238904567",
+     "officePhone": "8901234567", "address": "654 Pine Road"},
+    {"employeeID": 5, "firstName": "Eve", "lastName": "Davis", "homePhone": None,
+     "officePhone": "5678901234", "address": "321 Cedar Drive"},
+    # Add more records until 50
 ]
 
-EMPLOYMENT_DETAILS = {
-    101: {"departmentName": "Engineering", "companyName": "TechCorp"},
-    102: {"departmentName": "Marketing", "companyName": "Brand Inc."},
-    103: {"departmentName": "HR", "companyName": "PeopleFirst"},
-    104: {"departmentName": "Finance", "companyName": "MoneyMatters"},
-    105: {"departmentName": "Sales", "companyName": "SalesForce"},
-    106: {"departmentName": "R&D", "companyName": "InnovateCo"},
-    107: {"departmentName": "IT", "companyName": "TechSupport"},
-    108: {"departmentName": "Operations", "companyName": "OperateNow"},
-    109: {"departmentName": "Logistics", "companyName": "ShipQuick"},
-    110: {"departmentName": "Admin", "companyName": "OfficeWorks"}
-}
+for i in range(6, 51):
+    EMPLOYEE_DATA.append({
+        "employeeID": i,
+        "firstName": f"FirstName{i}",
+        "lastName": f"LastName{i}",
+        "homePhone": f"12345{i % 10}890" if i % 3 == 0 else None,
+        "officePhone": f"89012{i % 10}345" if i % 2 == 0 else None,
+        "address": f"{i} Street Name"
+    })
+
+#
+# #Employment Details
+# EMPLOYMENT_DETAILS = {
+#     1: {"departmentName": "IT", "companyName": "TechCorp", "departmentID": 101},
+#     2: {"departmentName": "HR", "companyName": "TechCorp", "departmentID": 102},
+#     3: {"departmentName": "Finance", "companyName": "TechCorp", "departmentID": 103},
+#     4: {"departmentName": "Marketing", "companyName": "TechCorp", "departmentID": 104},
+#     5: {"departmentName": "Sales", "companyName": "TechCorp", "departmentID": 105},
+#     6: {"departmentName": "Support", "companyName": "TechCorp", "departmentID": 106},
+#     7: {"departmentName": "Development", "companyName": "TechCorp", "departmentID": 107},
+#     8: {"departmentName": "Operations", "companyName": "TechCorp", "departmentID": 108},
+#     9: {"departmentName": "Testing", "companyName": "TechCorp", "departmentID": 109},
+#     10: {"departmentName": "Analytics", "companyName": "TechCorp", "departmentID": 110}
+# }
+#
+# # Fill the remaining records
+# for i in range(11, 51):
+#     EMPLOYMENT_DETAILS[i] = {
+#         "departmentName": f"Dept{i % 10 + 1}",
+#         "companyName": "TechCorp",
+#         "departmentID": 100 + (i % 10 + 1)
+#     }
+#
+# #Accounts Data
+#
+# ACCOUNTS = {
+#     1: [
+#         {"type": "Savings", "accountNumber": "1000012345"},
+#         {"type": "Credit Card", "accountNumber": "2000012345"},
+#         {"type": "Loan", "accountNumber": "3000012345"}
+#     ],
+#     2: [
+#         {"type": "Savings", "accountNumber": "1000023456"},
+#         {"type": "Loan", "accountNumber": "3000023456"}
+#     ],
+#     3: [
+#         {"type": "Credit Card", "accountNumber": "2000034567"}
+#     ],
+#     4: [
+#         {"type": "Savings", "accountNumber": "1000045678"},
+#         {"type": "Loan", "accountNumber": "3000045678"},
+#         {"type": "Credit Card", "accountNumber": "2000045678"}
+#     ],
+#     5: [
+#         {"type": "Loan", "accountNumber": "3000056789"}
+#     ]
+# }
+#
+# # Fill the remaining records
+# for i in range(6, 51):
+#     account_count = random.randint(3, 7)
+#     ACCOUNTS[i] = [
+#         {"type": random.choice(["Savings", "Credit Card", "Loan"]),
+#          "accountNumber": f"{random.randint(10000000, 99999999)}"}
+#         for _ in range(account_count)
+#     ]
+#
+
+# Static Employee List
+EMPLOYEE_DATA = [
+    {"employeeID": 1, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "8901234567", "address": "101 Elm Street"},
+    {"employeeID": 2, "firstName": "Jane", "lastName": "Smith", "homePhone": "1234567891", "officePhone": "8901234568", "address": "102 Oak Avenue"},
+    {"employeeID": 3, "firstName": "Alice", "lastName": "Johnson", "homePhone": None, "officePhone": "8901234569", "address": "103 Pine Lane"},
+    {"employeeID": 4, "firstName": "Bob", "lastName": "Brown", "homePhone": "1234567892", "officePhone": None, "address": "104 Maple Road"},
+    {"employeeID": 5, "firstName": "Eve", "lastName": "Taylor", "homePhone": None, "officePhone": "8901234570", "address": "105 Cedar Drive"},
+    {"employeeID": 6, "firstName": "Michael", "lastName": "Anderson", "homePhone": "1234567893", "officePhone": "8901234571", "address": "106 Birch Boulevard"},
+    {"employeeID": 7, "firstName": "Sarah", "lastName": "Thomas", "homePhone": None, "officePhone": "8901234572", "address": "107 Spruce Path"},
+    {"employeeID": 8, "firstName": "James", "lastName": "Jackson", "homePhone": "1234567894", "officePhone": None, "address": "108 Willow Way"},
+    {"employeeID": 9, "firstName": "Emma", "lastName": "White", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
+    {"employeeID": 10, "firstName": "Liam", "lastName": "Harris", "homePhone": "1234567895", "officePhone": "8901234574", "address": "110 Redwood Court"},
+    {"employeeID": 11, "firstName": "Olivia", "lastName": "Martin", "homePhone": None, "officePhone": "8901234575", "address": "111 Cypress Plaza"},
+    {"employeeID": 12, "firstName": "Noah", "lastName": "Thompson", "homePhone": "1234567896", "officePhone": None, "address": "112 Sycamore Lane"},
+    {"employeeID": 13, "firstName": "Sophia", "lastName": "Garcia", "homePhone": "1234567897", "officePhone": "8901234576", "address": "113 Poplar Park"},
+    {"employeeID": 14, "firstName": "Mason", "lastName": "Martinez", "homePhone": None, "officePhone": "8901234577", "address": "114 Dogwood Avenue"},
+    {"employeeID": 15, "firstName": "Isabella", "lastName": "Robinson", "homePhone": "1234567898", "officePhone": None, "address": "115 Magnolia Circle"},
+    {"employeeID": 16, "firstName": "Lucas", "lastName": "Clark", "homePhone": None, "officePhone": "8901234578", "address": "116 Beechwood Lane"},
+    {"employeeID": 17, "firstName": "Mia", "lastName": "Rodriguez", "homePhone": "1234567899", "officePhone": None, "address": "117 Chestnut Way"},
+    {"employeeID": 18, "firstName": "Ethan", "lastName": "Lewis", "homePhone": "1234567800", "officePhone": "8901234579", "address": "118 Alder Boulevard"},
+    {"employeeID": 19, "firstName": "Charlotte", "lastName": "Lee", "homePhone": None, "officePhone": "8901234580", "address": "119 Hazel Drive"},
+    {"employeeID": 20, "firstName": "Logan", "lastName": "Walker", "homePhone": "1234567801", "officePhone": None, "address": "120 Hawthorn Court"},
+]
+
+# Static Departments and Companies
+DEPARTMENTS = [
+    {"departmentID": 1, "departmentName": "IT"},
+    {"departmentID": 2, "departmentName": "HR"},
+    {"departmentID": 3, "departmentName": "Finance"},
+    {"departmentID": 4, "departmentName": "Operations"}
+]
+
+COMPANIES = [
+    "TechCorp", "InnovaSoft", "SkyHigh Enterprises"
+]
+
+# Map each employee to a department and a company (cyclic assignment)
+EMPLOYMENT_DETAILS = {}
+for i, employee in enumerate(EMPLOYEE_DATA):
+    department = DEPARTMENTS[i % len(DEPARTMENTS)]
+    company = COMPANIES[i % len(COMPANIES)]
+    EMPLOYMENT_DETAILS[employee["employeeID"]] = {
+        "departmentID": department["departmentID"],
+        "departmentName": department["departmentName"],
+        "companyName": company
+    }
+
+# Static Account Data
+ACCOUNTS = {}
+for employee in EMPLOYEE_DATA:
+    employee_id = employee["employeeID"]
+    account_count = random.randint(3, 7)
+    ACCOUNTS[employee_id] = [
+        {"type": random.choice(["Savings", "Credit Card", "Loan"]),
+         "accountNumber": f"{random.randint(1000000000, 9999999999)}"}
+        for _ in range(account_count)
+    ]
 
 
-# Utility function for XML error response
-def generate_xml_error(error_code, error_desc, first_name=None, last_name=None):
-    root = Element('ErrorResponse')
-    error_code_elem = Element('errorCode')
-    error_code_elem.text = str(error_code)
-    error_desc_elem = Element('errorDescription')
-    error_desc_elem.text = error_desc
-
-    root.append(error_code_elem)
-    root.append(error_desc_elem)
-
-    if first_name:
-        first_name_elem = Element('firstName')
-        first_name_elem.text = first_name
-        root.append(first_name_elem)
-
-    if last_name:
-        last_name_elem = Element('lastName')
-        last_name_elem.text = last_name
-        root.append(last_name_elem)
-
-    response = make_response(tostring(root), error_code)
-    response.headers['Content-Type'] = 'application/xml'
-    return response
 
 @app.route('/api/employee_info', methods=['POST'])
 def employee_info():
-    # Check for SOAPAction header
     if 'SOAPAction' not in request.headers:
-        return generate_xml_error(403, "Forbidden: Missing SOAPAction header.")
+        return make_response("Forbidden: Missing SOAPAction header.", 403)
 
-    # Parse XML input
     if request.content_type != 'application/xml':
-        return generate_xml_error(400, "Invalid content type. Please provide XML input.")
+        return make_response("Invalid content type. Please provide XML input.", 400)
 
     xml_data = request.data
     try:
-        # Parse input XML
-        from xml.etree.ElementTree import fromstring
         input_data = fromstring(xml_data)
         first_name = input_data.find('firstName').text
         last_name = input_data.find('lastName').text
@@ -153,60 +369,133 @@ def employee_info():
         # Search for the employee
         employee = next((emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name), None)
         if not employee:
-            return generate_xml_error(404, "Employee not found.", first_name, last_name)
+            return make_response("Employee not found.", 404)
 
         # Build XML response
         root = Element('EmployeeDetails')
 
-        # Add basic employee fields
-        for key in ['employeeID', 'firstName', 'lastName', 'address']:
-            child = Element(key)
-            child.text = str(employee[key]) if employee[key] else "N/A"
-            root.append(child)
+        # Add employeeID
+        employee_id_element = Element('employeeID')
+        employee_id_data = [
+            {"type": "Current", "ID": employee["employeeID"]},
+            {"type": "Previous", "ID": employee["employeeID"] + 100}
+        ]
+        random.shuffle(employee_id_data)
+        for id_data in employee_id_data:
+            type_elem = SubElement(employee_id_element, 'type')
+            type_elem.text = id_data["type"]
+            id_elem = SubElement(employee_id_element, 'ID')
+            id_elem.text = str(id_data["ID"])
+        root.append(employee_id_element)
 
-        # Add phone numbers as nested XML
-        phone_numbers = Element('phoneNumbers')
-        home_phone = Element('homePhone')
-        home_phone.text = employee['homePhone'] if employee['homePhone'] else "N/A"
-        office_phone = Element('officePhone')
-        office_phone.text = employee['officePhone'] if employee['officePhone'] else "N/A"
+        # Add phone numbers
+        phone_element = Element('Phone')
+        phone_data = [
+            {"type": "Home", "PhoneNumber": employee["homePhone"]},
+            {"type": "Office", "PhoneNumber": employee["officePhone"]}
+        ]
+        phone_data = [entry for entry in phone_data if entry["PhoneNumber"]]
+        random.shuffle(phone_data)
+        for phone in phone_data:
+            type_elem = SubElement(phone_element, 'type')
+            type_elem.text = phone["type"]
+            phone_number_elem = SubElement(phone_element, 'PhoneNumber')
+            phone_number_elem.text = phone["PhoneNumber"]
+        root.append(phone_element)
 
-        phone_numbers.append(home_phone)
-        phone_numbers.append(office_phone)
-        root.append(phone_numbers)
+        # Add accounts
+        account_element = Element('Accounts')
+        accounts = ACCOUNTS.get(employee["employeeID"], [])
+        for account in accounts:
+            account_type_elem = SubElement(account_element, 'type')
+            account_type_elem.text = account["type"]
+            account_number_elem = SubElement(account_element, 'accountNumber')
+            account_number_elem.text = account["accountNumber"]
+        root.append(account_element)
 
-        # Generate response
+        # Add remaining details
+        for key, value in employee.items():
+            if key not in ["employeeID", "homePhone", "officePhone"]:
+                child = SubElement(root, key)
+                child.text = str(value) if value else "N/A"
+
         response = make_response(tostring(root), 200)
         response.headers['Content-Type'] = 'application/xml'
         return response
 
     except Exception as e:
-        return generate_xml_error(500, f"Error processing request: {str(e)}")
+        return make_response(f"Error processing request: {str(e)}", 500)
 
 
-# API 2: Get employment details based on employeeID
 @app.route('/api/employment_details', methods=['POST'])
 def employment_details():
-    # Check for APIAuth header
-    if 'APIAuth' not in request.headers:
-        return make_response(jsonify({"error": "Forbidden: Missing APIAuth header."}), 403)
+    if 'SOAPAction' not in request.headers:
+        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
 
-    try:
-        data = request.get_json()
-        if not data or 'employeeID' not in data:
-            return jsonify({"error": "Invalid request. Please provide employeeID."}), 400
+    request_data = request.get_json()
+    employee_id = request_data.get('employeeID')
+    if not employee_id:
+        return jsonify({"error": "Missing employeeID"}), 400
 
-        employee_id = data['employeeID']
-        # Search for employment details
-        details = EMPLOYMENT_DETAILS.get(employee_id)
-        if not details:
+    details = EMPLOYMENT_DETAILS.get(employee_id)
+    if not details:
+        return jsonify({"error": "Employee ID not found"}), 404
+
+    return jsonify(details), 200
+
+
+@app.route('/api/employee_list', methods=['GET'])
+def employee_list():
+    if 'SOAPAction' not in request.headers:
+        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+        employees = [
+            {"employeeID": emp["employeeID"], "firstName": emp["firstName"], "lastName": emp["lastName"],
+             "department": EMPLOYMENT_DETAILS[emp["employeeID"]]["departmentName"]}
+            for emp in EMPLOYEE_DATA
+        ]
+        return jsonify({"employees": employees}), 200
+    elif query_type == 'SINGLE':
+        employee_id = request.args.get('employeeID')
+        if not employee_id:
+            return jsonify({"error": "Missing employeeID query parameter"}), 400
+
+        employee_id = int(employee_id)
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["employeeID"] == employee_id), None)
+        if not employee:
             return jsonify({"error": "Employee ID not found"}), 404
 
-        # Return JSON response
-        return jsonify({"status_code": 200, "details": details}), 200
+        return jsonify({
+            "employeeID": employee["employeeID"],
+            "firstName": employee["firstName"],
+            "lastName": employee["lastName"],
+            "department": EMPLOYMENT_DETAILS[employee_id]["departmentName"]
+        }), 200
 
-    except Exception as e:
-        return jsonify({"error": f"Error processing request: {str(e)}"}), 500
+    return jsonify({"error": "Invalid type parameter. Use 'ALL' or 'SINGLE'."}), 400
+
+
+# API to get employee and department details
+@app.route('/api/employee_details', methods=['GET'])
+def get_employee_details():
+    employee_details = []
+
+    for employee in EMPLOYEE_DATA:
+        employee_id = employee["employeeID"]
+        department = EMPLOYMENT_DETAILS.get(employee_id)
+
+        if department:
+            employee_details.append({
+                "employeeID": employee_id,
+                "departmentID": department["departmentID"],
+                "employeeName": f"{employee['firstName']} {employee['lastName']}",
+                "departmentName": department["departmentName"]
+            })
+
+    return jsonify(employee_details), 200
 
 # Routes
 @app.route('/')
