@@ -1,0 +1,81 @@
+1. Employee Details API
+Endpoint:
+
+URL: /employee_details
+Method: GET
+Description:
+This API will return the details of all employees, including their employeeID, departmentID, employeeName, and departmentName.
+
+Request Example:
+
+URL: http://127.0.0.1:5000/employee_details
+
+
+
+
+2. Employee Information API (with XML input)
+Endpoint:
+
+URL: /employee_info
+Method: POST
+Content-Type: application/xml
+Description:
+This API takes the firstName and lastName as input in XML format and returns the employee's full information, including their employeeID, phone numbers, address, and account numbers.
+
+Request Example (XML):
+
+URL: http://127.0.0.1:5000/employee_info
+Request Body:
+<employee>
+    <firstName>John</firstName>
+    <lastName>Doe</lastName>
+</employee>
+
+
+Required Headers:
+Content-Type: application/xml (since you are sending XML data)
+
+For JSON data: Content-Type: application/json
+For XML data: Content-Type: application/xml
+
+
+SOAPAction: This is an optional header, but if you're working in a SOAP-like setup, you can specify a SOAPAction header with a value (this can be a custom value based on your business needs).
+
+Example: SOAPAction: "urn:EmployeeInfo"
+
+
+3. Employment Details API (with EmployeeID)
+Endpoint:
+
+URL: /employment_details
+Method: POST
+Content-Type: application/json
+Description:
+This API takes the employeeID as input and returns employment details, including departmentID, departmentName, companyName, and employee type (current or previous).
+
+Request Example (JSON):
+
+URL: http://127.0.0.1:5000/employment_details
+Request Body:
+{
+    "employeeID": 1
+}
+
+
+
+
+4. Employee List API (with Query Parameter)
+Endpoint:
+
+URL: /employee_list
+Method: GET
+Description:
+This API will provide a complete list of employees. You can filter the list by setting the query parameter employee_type to either single or ALL. If employee_type is single, it will return only the employee with the provided employeeID. If it's set to ALL, it will return all employees.
+
+Request Example:
+
+URL for all employees: http://127.0.0.1:5000/employee_list?employee_type=ALL
+URL for single employee (ID = 1): http://127.0.0.1:5000/employee_list?employee_type=single&employeeID=1
+
+
+
