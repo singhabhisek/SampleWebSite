@@ -1,3 +1,203 @@
+SEARCH_RESULTS = {
+    "TV": [
+        {"id": "P001", "name": "Samsung 32 inch Smart TV"},
+        {"id": "P002", "name": "LG OLED 55 inch TV"},
+        {"id": "P003", "name": "Sony Bravia 50 inch TV"},
+        {"id": "P004", "name": "Panasonic 43 inch Smart TV"},
+        {"id": "P005", "name": "TCL 40 inch Full HD TV"}
+    ],
+    "Mobile": [
+        {"id": "P101", "name": "iPhone 14 Pro Max"},
+        {"id": "P102", "name": "Samsung Galaxy S23 Ultra"},
+        {"id": "P103", "name": "OnePlus Nord 3"},
+        {"id": "P104", "name": "Google Pixel 8"},
+        {"id": "P105", "name": "Xiaomi Mi 13"}
+    ],
+    "Washing Machine": [
+        {"id": "P201", "name": "Whirlpool 7kg Fully Automatic"},
+        {"id": "P202", "name": "LG 8kg Front Load"},
+        {"id": "P203", "name": "Samsung 6.5kg Top Load"}
+    ],
+    "Laptop": [
+        {"id": "P301", "name": "Dell XPS 13"},
+        {"id": "P302", "name": "MacBook Pro 16-inch"},
+        {"id": "P303", "name": "Alienware m15 R6"}
+    ],
+    "Headphone": [
+        {"id": "P401", "name": "Sony WH-1000XM5"},
+        {"id": "P402", "name": "Bose QuietComfort 45"},
+        {"id": "P403", "name": "Apple AirPods Max"}
+    ],
+    "Smartwatch": [
+        {"id": "P501", "name": "iWatch 15 Pro"},
+        {"id": "P502", "name": "Samsung Watch Z Fold 5"}
+    ]
+}
+
+
+
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    # Ensure user is logged in
+    if 'session_id' not in session or 'username' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Get the logged-in user's allowed product categories
+    username = session['username']
+    user_products = USERS[username]['products']
+
+    # Filter products by allowed categories
+    filtered_products = {category: SEARCH_RESULTS[category] for category in user_products}
+
+    return render_template('search.html', products=filtered_products)
+
+
+
+@app.route('/search_results', methods=['POST'])
+def search_results():
+    # Ensure user is logged in
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Handle search
+    category = request.form.get('category')
+    query = request.form.get('query', '').lower()
+    results = SEARCH_RESULTS.get(category, [])
+
+    # Filter results by query
+    if query:
+        results = [item for item in results if query in item['name'].lower()]
+
+    return render_template('search_results.html', results=results)
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search</title>
+    <style>
+        /* Add styles for better appearance */
+    </style>
+</head>
+<body>
+    <h1>Search Page</h1>
+    <form method="POST" action="/search_results">
+        <label for="category">Category:</label>
+        <select id="category" name="category">
+            {% for category, items in products.items() %}
+                <optgroup label="{{ category }}">
+                    {% for item in items %}
+                        <option value="{{ category }}">{{ item['id'] }} - {{ item['name'] }}</option>
+                    {% endfor %}
+                </optgroup>
+            {% endfor %}
+        </select>
+        <label for="query">Free Search:</label>
+        <input type="text" id="query" name="query" placeholder="Type to search...">
+        <button type="submit">Search</button>
+    </form>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Search</title>
+    <style>
+        /* Add styles for better appearance */
+    </style>
+</head>
+<body>
+    <h1>Search Page</h1>
+    <form method="POST" action="/search_results">
+        <label for="category">Category:</label>
+        <select id="category" name="category">
+            {% for category, items in products.items() %}
+                <optgroup label="{{ category }}">
+                    {% for item in items %}
+                        <option value="{{ category }}">{{ item['id'] }} - {{ item['name'] }}</option>
+                    {% endfor %}
+                </optgroup>
+            {% endfor %}
+        </select>
+        <label for="query">Free Search:</label>
+        <input type="text" id="query" name="query" placeholder="Type to search...">
+        <button type="submit">Search</button>
+    </form>
+</body>
+</html>
+
+
+@app.route('/cart', methods=['GET', 'POST'])
+def cart():
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        # Remove item by index
+        index = int(request.form.get('index'))
+        cart = session.get('cart', [])
+        if 0 <= index < len(cart):
+            cart.pop(index)
+        session['cart'] = cart
+
+    return render_template('cart.html', cart=session.get('cart', []))
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cart</title>
+    <style>
+        /* Add styles for better appearance */
+    </style>
+</head>
+<body>
+    <h1>Your Cart</h1>
+    {% if cart %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for index, item in enumerate(cart) %}
+                    <tr>
+                        <td>{{ index + 1 }}</td>
+                        <td>{{ item['id'] }}</td>
+                        <td>{{ item['name'] }}</td>
+                        <td>
+                            <form method="POST">
+                                <input type="hidden" name="index" value="{{ index }}">
+                                <button type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No items in the cart.</p>
+    {% endif %}
+</body>
+</html>
+
+
+
+
+=======================
+
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import random
 import uuid
