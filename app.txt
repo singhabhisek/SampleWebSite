@@ -293,37 +293,61 @@ for i in range(6, 51):
 #
 
 # Static Employee List
+# Static Employee List with updated IDs
 EMPLOYEE_DATA = [
-    {"employeeID": 1, "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "8901234567", "address": "101 Elm Street"},
-    {"employeeID": 2, "firstName": "Jane", "lastName": "Smith", "homePhone": "1234567891", "officePhone": "8901234568", "address": "102 Oak Avenue"},
-    {"employeeID": 3, "firstName": "Alice", "lastName": "Johnson", "homePhone": None, "officePhone": "8901234569", "address": "103 Pine Lane"},
-    {"employeeID": 4, "firstName": "Bob", "lastName": "Brown", "homePhone": "1234567892", "officePhone": None, "address": "104 Maple Road"},
-    {"employeeID": 5, "firstName": "Eve", "lastName": "Taylor", "homePhone": None, "officePhone": "8901234570", "address": "105 Cedar Drive"},
-    {"employeeID": 6, "firstName": "Michael", "lastName": "Anderson", "homePhone": "1234567893", "officePhone": "8901234571", "address": "106 Birch Boulevard"},
-    {"employeeID": 7, "firstName": "Sarah", "lastName": "Thomas", "homePhone": None, "officePhone": "8901234572", "address": "107 Spruce Path"},
-    {"employeeID": 8, "firstName": "James", "lastName": "Jackson", "homePhone": "1234567894", "officePhone": None, "address": "108 Willow Way"},
-    {"employeeID": 9, "firstName": "Emma", "lastName": "White", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
-    {"employeeID": 10, "firstName": "Liam", "lastName": "Harris", "homePhone": "1234567895", "officePhone": "8901234574", "address": "110 Redwood Court"},
-    {"employeeID": 11, "firstName": "Olivia", "lastName": "Martin", "homePhone": None, "officePhone": "8901234575", "address": "111 Cypress Plaza"},
-    {"employeeID": 12, "firstName": "Noah", "lastName": "Thompson", "homePhone": "1234567896", "officePhone": None, "address": "112 Sycamore Lane"},
-    {"employeeID": 13, "firstName": "Sophia", "lastName": "Garcia", "homePhone": "1234567897", "officePhone": "8901234576", "address": "113 Poplar Park"},
-    {"employeeID": 14, "firstName": "Mason", "lastName": "Martinez", "homePhone": None, "officePhone": "8901234577", "address": "114 Dogwood Avenue"},
-    {"employeeID": 15, "firstName": "Isabella", "lastName": "Robinson", "homePhone": "1234567898", "officePhone": None, "address": "115 Magnolia Circle"},
-    {"employeeID": 16, "firstName": "Lucas", "lastName": "Clark", "homePhone": None, "officePhone": "8901234578", "address": "116 Beechwood Lane"},
-    {"employeeID": 17, "firstName": "Mia", "lastName": "Rodriguez", "homePhone": "1234567899", "officePhone": None, "address": "117 Chestnut Way"},
-    {"employeeID": 18, "firstName": "Ethan", "lastName": "Lewis", "homePhone": "1234567800", "officePhone": "8901234579", "address": "118 Alder Boulevard"},
-    {"employeeID": 19, "firstName": "Charlotte", "lastName": "Lee", "homePhone": None, "officePhone": "8901234580", "address": "119 Hazel Drive"},
-    {"employeeID": 20, "firstName": "Logan", "lastName": "Walker", "homePhone": "1234567801", "officePhone": None, "address": "120 Hawthorn Court"},
+    {"employeeID": "E001", "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "8901234567", "address": "101 Elm Street"},
+    {"employeeID": "E002", "firstName": "Jane", "lastName": "Smith", "homePhone": "1234567891", "officePhone": "8901234568", "address": "102 Oak Avenue"},
+    {"employeeID": "E003", "firstName": "Alice", "lastName": "Johnson", "homePhone": None, "officePhone": "8901234569", "address": "103 Pine Lane"},
+    {"employeeID": "E004", "firstName": "Bob", "lastName": "Brown", "homePhone": "1234567892", "officePhone": None, "address": "104 Maple Road"},
+    {"employeeID": "E005", "firstName": "Eve", "lastName": "Taylor", "homePhone": None, "officePhone": "8901234570", "address": "105 Cedar Drive"},
+    {"employeeID": "E006", "firstName": "Michael", "lastName": "Anderson", "homePhone": "1234567893", "officePhone": "8901234571", "address": "106 Birch Boulevard"},
+    {"employeeID": "E007", "firstName": "Sarah", "lastName": "Thomas", "homePhone": None, "officePhone": "8901234572", "address": "107 Spruce Path"},
+    {"employeeID": "E008", "firstName": "James", "lastName": "Jackson", "homePhone": "1234567894", "officePhone": None, "address": "108 Willow Way"},
+    {"employeeID": "E009", "firstName": "Emma", "lastName": "White", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
+    {"employeeID": "E010", "firstName": "Liam", "lastName": "Harris", "homePhone": "1234567895", "officePhone": "8901234574", "address": "110 Redwood Court"},
+    {"employeeID": "E011", "firstName": "Olivia", "lastName": "Martin", "homePhone": None, "officePhone": "8901234575", "address": "111 Cypress Plaza"},
+    {"employeeID": "E012", "firstName": "Noah", "lastName": "Thompson", "homePhone": "1234567896", "officePhone": None, "address": "112 Sycamore Lane"},
+    {"employeeID": "E013", "firstName": "Sophia", "lastName": "Garcia", "homePhone": "1234567897", "officePhone": "8901234576", "address": "113 Poplar Park"},
+    {"employeeID": "E014", "firstName": "Mason", "lastName": "Martinez", "homePhone": None, "officePhone": "8901234577", "address": "114 Dogwood Avenue"},
+    {"employeeID": "E015", "firstName": "Isabella", "lastName": "Robinson", "homePhone": "1234567898", "officePhone": None, "address": "115 Magnolia Circle"},
+    {"employeeID": "E016", "firstName": "Lucas", "lastName": "Clark", "homePhone": None, "officePhone": "8901234578", "address": "116 Beechwood Lane"},
+    {"employeeID": "E017", "firstName": "Mia", "lastName": "Rodriguez", "homePhone": "1234567899", "officePhone": None, "address": "117 Chestnut Way"},
+    {"employeeID": "E018", "firstName": "Ethan", "lastName": "Lewis", "homePhone": "1234567800", "officePhone": "8901234579", "address": "118 Alder Boulevard"},
+    {"employeeID": "E019", "firstName": "Charlotte", "lastName": "Lee", "homePhone": None, "officePhone": "8901234580", "address": "119 Hazel Drive"},
+    {"employeeID": "E020", "firstName": "Logan", "lastName": "Walker", "homePhone": "1234567801", "officePhone": None, "address": "120 Hawthorn Court"},
 ]
 
-# Static Departments and Companies
+# Static Department List
 DEPARTMENTS = [
-    {"departmentID": 1, "departmentName": "IT"},
-    {"departmentID": 2, "departmentName": "HR"},
-    {"departmentID": 3, "departmentName": "Finance"},
-    {"departmentID": 4, "departmentName": "Operations"}
+    {"departmentID": "D001", "departmentName": "IT"},
+    {"departmentID": "D002", "departmentName": "HR"},
+    {"departmentID": "D003", "departmentName": "Finance"},
+    {"departmentID": "D004", "departmentName": "Operations"}
 ]
 
+# Static Mapping of Employees to Departments
+EMPLOYMENT_DETAILS = {
+    "E001": {"departmentID": "D001", "departmentName": "IT"},
+    "E002": {"departmentID": "D002", "departmentName": "HR"},
+    "E003": {"departmentID": "D003", "departmentName": "Finance"},
+    "E004": {"departmentID": "D004", "departmentName": "Operations"},
+    "E005": {"departmentID": "D001", "departmentName": "IT"},
+    "E006": {"departmentID": "D002", "departmentName": "HR"},
+    "E007": {"departmentID": "D003", "departmentName": "Finance"},
+    "E008": {"departmentID": "D004", "departmentName": "Operations"},
+    "E009": {"departmentID": "D001", "departmentName": "IT"},
+    "E010": {"departmentID": "D002", "departmentName": "HR"},
+    "E011": {"departmentID": "D003", "departmentName": "Finance"},
+    "E012": {"departmentID": "D004", "departmentName": "Operations"},
+    "E013": {"departmentID": "D001", "departmentName": "IT"},
+    "E014": {"departmentID": "D002", "departmentName": "HR"},
+    "E015": {"departmentID": "D003", "departmentName": "Finance"},
+    "E016": {"departmentID": "D004", "departmentName": "Operations"},
+    "E017": {"departmentID": "D001", "departmentName": "IT"},
+    "E018": {"departmentID": "D002", "departmentName": "HR"},
+    "E019": {"departmentID": "D003", "departmentName": "Finance"},
+    "E020": {"departmentID": "D004", "departmentName": "Operations"},
+}
 COMPANIES = [
     "TechCorp", "InnovaSoft", "SkyHigh Enterprises"
 ]
