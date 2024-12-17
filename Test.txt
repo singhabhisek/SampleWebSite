@@ -1,0 +1,111 @@
+If you only want to restart your specific Python program that runs on 0.0.0.0:8083 without affecting other Python processes, you need to:
+
+1. Identify the specific process listening on port 8083.
+
+
+2. Kill only that process.
+
+
+3. Restart your script.
+
+
+
+Below is an updated batch script that handles this:
+
+
+---
+
+Windows Batch Script
+
+Save this script as restart_app.bat:
+
+@echo off
+:: Find the process ID (PID) listening on port 8083
+for /f "tokens=5" %%a in ('netstat -aon ^| find "0.0.0.0:8083"') do (
+    set PID=%%a
+)
+
+:: Check if PID is set (process exists), then kill the process
+if defined PID (
+    echo Killing process with PID %PID%
+    taskkill /PID %PID% /F
+) else (
+    echo No process found on port 8083
+)
+
+:: Restart the Python script
+echo Starting app.py...
+start /B python "C:\path\to\app.py"
+
+
+---
+
+How It Works
+
+1. netstat -aon | find "0.0.0.0:8083":
+
+Finds the process ID (PID) of the program listening on 0.0.0.0:8083.
+
+netstat -aon lists all network connections and includes the associated PIDs.
+
+find "0.0.0.0:8083" filters the results to locate your program.
+
+
+
+2. for /f "tokens=5":
+
+Extracts the PID from the output of netstat.
+
+
+
+3. taskkill /PID %PID% /F:
+
+Kills the specific process identified by its PID.
+
+
+
+4. start /B python "C:\path\to\app.py":
+
+Restarts your script in the background.
+
+
+
+5. Echo messages:
+
+Provides feedback for debugging.
+
+
+
+
+
+---
+
+How to Schedule It
+
+Use Windows Task Scheduler to run the script at 1 PM daily:
+
+1. Open Task Scheduler.
+
+
+2. Create a new basic task.
+
+
+3. Set the Trigger to Daily at 1 PM.
+
+
+4. Set the Action to Start a Program and browse to restart_app.bat.
+
+
+
+
+---
+
+Why This Works
+
+It targets only the process running on port 8083.
+
+It avoids killing any unrelated python.exe processes.
+
+
+Let me know if you need further assistance!
+
