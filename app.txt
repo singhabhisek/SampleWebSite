@@ -1,3 +1,174 @@
+
+
+To call the provided endpoints in Postman, you need to set up the request headers, authorization (if applicable), and body content depending on the API type. Below are the steps and configurations to call each of the mentioned endpoints in Postman:
+
+1. /customer/details (JSON Request)
+This endpoint expects a JSON request with customer details and requires authorization in the form of headers (e.g., an API key or token).
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/customer/details
+Headers:
+Authorization: Add your token or API key here (for example: Bearer <your_token>).
+Content-Type: application/json
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "CustomerID": "C001",
+  "FirstName": "John",
+  "LastName": "Doe"
+}
+Response: A JSON object with customer details or an error if not found.
+2. /customer/details/xml (XML Request)
+This endpoint expects an XML request and returns the customer details in XML format.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/customer/details/xml
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/xml
+Body:
+raw (select XML format) and use the following sample XML:
+xml
+Copy code
+<Request>
+  <CustomerID>C001</CustomerID>
+  <FirstName>John</FirstName>
+  <LastName>Doe</LastName>
+</Request>
+Response: XML response with customer details or an error message.
+3. /accounts/details (JSON Request)
+This endpoint returns account details in JSON format based on the customer ID.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/accounts/details
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/json
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "CustomerID": "C001"
+}
+Response: A JSON object with account details or an error if customer ID is not found.
+4. /accounts/details/xml (XML Request)
+This endpoint works the same way as /accounts/details, but it expects XML input and returns an XML response.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/accounts/details/xml
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/xml
+Body:
+raw (select XML format) and use the following sample XML:
+xml
+Copy code
+<Request>
+  <CustomerID>C001</CustomerID>
+</Request>
+Response: An XML response with account details.
+5. /transactions/history (JSON Request)
+This endpoint returns the transaction history of a specific account.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/transactions/history
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/json
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "AccountNumber": "A123"
+}
+Response: JSON response with transaction history or an error if the account is not found.
+6. /location/lookup (GET Request)
+This endpoint retrieves location information based on a ZipCode.
+
+Steps to Call the Endpoint in Postman:
+Method: GET
+URL: http://localhost:5000/location/lookup?ZipCode=<zipcode>
+Headers:
+Authorization: Add your token or API key here.
+Query Params:
+ZipCode: Add the zip code you're looking for (e.g., 94103).
+Response: JSON response with location data or an error if not found.
+7. /customer/financial_summary (JSON Request)
+This endpoint returns a financial summary for a customer.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/customer/financial_summary
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/json
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "CustomerID": "C001"
+}
+Response: A JSON object with the financial summary for the customer.
+8. /customer/consolidated_financial_summary (JSON Request)
+This endpoint provides a consolidated financial summary, including transactions.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/customer/consolidated_financial_summary
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/json
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "CustomerID": "C001"
+}
+Response: A JSON object with the consolidated financial summary.
+9. /customer/consolidated_financial_summary/xml (XML Request)
+This endpoint provides the consolidated financial summary in XML format.
+
+Steps to Call the Endpoint in Postman:
+Method: POST
+URL: http://localhost:5000/customer/consolidated_financial_summary/xml
+Headers:
+Authorization: Add your token or API key here.
+Content-Type: application/json (since the request body is still in JSON format).
+Body:
+raw (select JSON format) and use the following sample JSON:
+json
+Copy code
+{
+  "CustomerID": "C001"
+}
+Response: XML response with the consolidated financial summary.
+Authorization Headers for All Endpoints:
+For most endpoints, you will need to include an Authorization header to authenticate the request. Here’s how you can set it up in Postman:
+
+Go to the Headers tab in Postman.
+Add a new key called Authorization.
+Set the value to Bearer <your_token>, replacing <your_token> with your actual authentication token.
+Alternatively, if using an API key, you can set the header to something like:
+
+Authorization: API-Key <your_api_key>
+
+
+====================
+
+
+
+
 SEARCH_RESULTS = {
     "TV": [
         {"id": "P001", "name": "Samsung 32 inch Smart TV"},
