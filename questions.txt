@@ -1,0 +1,26 @@
+Fetch Customer Details and Financial Transactions
+Execute the /customer/details API with FirstName and LastName. Extract the CustomerID from the response and use it to fetch the consolidated financial summary using /customer/consolidated_financial_summary. Print the transaction history for each account listed.
+
+Search by Customer ID and Extract Address
+Use the /customer/details API with CustomerID. Extract and log the Street Address. Then, fetch all Loan account numbers using /accounts/details and display their transaction history from /transactions/history.
+
+Identify Savings-Only Customers and Fetch Summaries
+Query /customer/details with CustomerID. From the response, determine customers who only hold Savings accounts and fetch their consolidated financial summary in XML format using /customer/consolidated_financial_summary/xml.
+
+Filter Locations for Customers
+Execute /customer/details for a specific CustomerID. Extract their address and use the ZIP code to query /location/lookup. Validate if the ZIP code exists and print the corresponding location details.
+
+Customer's Full Financial Summary with XML Accounts
+Use /customer/details to fetch customer data. Extract the CustomerID, retrieve the financial summary from /customer/consolidated_financial_summary, and display account details in XML format from /accounts/details/xml.
+
+Transactional Summary for Loan Accounts
+Query /customer/details with CustomerID to extract loan account numbers. Fetch the transaction history for each loan account using /transactions/history. Aggregate the total debits and credits for these accounts.
+
+Savings and Credit Accounts with Random Transactions
+Query /customer/details to extract CustomerID in JSON format. Fetch their accounts using /accounts/details. For customers with both Savings and Credit accounts, extract transactions for each account and validate the total balances using /customer/financial_summary.
+
+Filter Locations for All Customers
+Fetch details of all customers using /customer/details with a wildcard search. Extract all ZIP codes and query /location/lookup for each ZIP code. Aggregate the list of unique locations associated with the customers.
+
+Consolidated Summary and XML Validation
+Use /customer/consolidated_financial_summary to fetch the financial summary of a customer. Extract all account details and compare them against the XML response from /customer/consolidated_financial_summary/xml. Ensure both summaries are identical and consistent.
