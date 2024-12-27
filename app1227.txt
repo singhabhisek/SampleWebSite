@@ -563,7 +563,8 @@ def customer_details_xml():
         customer.update(customer_data)
 
     # Convert the data back to XML format
-    response_dict = {"Customers": matching_customers}
+    response_dict = {"Customers": {"Customer": matching_customers}}
+
     xml_response = xmltodict.unparse(response_dict, pretty=True)
 
     return make_response(xml_response, 200, {'Content-Type': 'application/xml'})
