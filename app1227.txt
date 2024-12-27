@@ -1,0 +1,1291 @@
+from datetime import datetime, timedelta
+
+from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
+import random
+import uuid
+import xmltodict
+import csv
+
+from flask import Flask, request, jsonify, make_response
+from xml.etree.ElementTree import Element, tostring, fromstring, SubElement
+import xml.etree.ElementTree as ET
+from flask_cors import CORS
+
+
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+app.secret_key = 'your_secret_key'  # Replace with a strong secret key
+
+# Dummy credentials
+USERNAME = "admin"
+PASSWORD = "password"
+
+# Dummy data for search results
+
+# Updated dummy data for search results
+SEARCH_RESULTS = {
+    "TV": [
+        {"id": "TV001", "name": "Samsung 32 inch Smart TV", "price": 299.99, "date_released": "2022-05-15"},
+        {"id": "TV002", "name": "LG OLED 55 inch TV", "price": 1299.99, "date_released": "2023-02-10"},
+        {"id": "TV003", "name": "Sony Bravia 50 inch TV", "price": 999.99, "date_released": "2023-03-20"},
+        {"id": "TV004", "name": "Panasonic 43 inch Smart TV", "price": 599.99, "date_released": "2022-08-01"},
+        {"id": "TV005", "name": "TCL 40 inch Full HD TV", "price": 349.99, "date_released": "2022-11-12"},
+        {"id": "TV006", "name": "Vizio 60 inch 4K TV", "price": 749.99, "date_released": "2023-01-05"},
+        {"id": "TV007", "name": "Sharp Aquos 50 inch TV", "price": 799.99, "date_released": "2023-06-25"},
+        {"id": "TV008", "name": "Philips 55 inch Smart TV", "price": 899.99, "date_released": "2023-04-30"},
+        {"id": "TV009", "name": "Hisense 65 inch TV", "price": 679.99, "date_released": "2022-09-14"},
+        {"id": "TV010", "name": "RCA 32 inch HD TV", "price": 199.99, "date_released": "2022-12-22"},
+        {"id": "TV011", "name": "Insignia 39 inch TV", "price": 249.99, "date_released": "2023-03-15"},
+        {"id": "TV012", "name": "Toshiba Fire TV 43 inch", "price": 429.99, "date_released": "2023-05-10"}
+    ],
+    "Mobile": [
+        {"id": "MO001", "name": "iPhone 14 Pro Max", "price": 1099.99, "date_released": "2022-09-16"},
+        {"id": "MO002", "name": "Samsung Galaxy S23 Ultra", "price": 1199.99, "date_released": "2023-02-01"},
+        {"id": "MO003", "name": "OnePlus Nord 3", "price": 399.99, "date_released": "2023-07-15"},
+        {"id": "MO004", "name": "Google Pixel 8", "price": 799.99, "date_released": "2023-10-04"},
+        {"id": "MO005", "name": "Xiaomi Mi 13", "price": 599.99, "date_released": "2023-03-10"},
+        {"id": "MO006", "name": "Oppo Reno 10 Pro", "price": 649.99, "date_released": "2023-06-18"},
+        {"id": "MO007", "name": "Vivo X80 Pro", "price": 699.99, "date_released": "2022-07-12"},
+        {"id": "MO008", "name": "Motorola Edge 40", "price": 499.99, "date_released": "2023-05-25"},
+        {"id": "MO009", "name": "Realme GT 3", "price": 449.99, "date_released": "2023-04-15"},
+        {"id": "MO010", "name": "Asus ROG Phone 7", "price": 999.99, "date_released": "2023-03-30"},
+        {"id": "MO011", "name": "Nokia XR20", "price": 549.99, "date_released": "2022-08-01"},
+        {"id": "MO012", "name": "Sony Xperia 1 IV", "price": 1299.99, "date_released": "2023-01-25"}
+    ],
+    "Washing Machine": [
+        {"id": "WM001", "name": "Whirlpool 7kg Fully Automatic", "price": 499.99, "date_released": "2023-01-20"},
+        {"id": "WM002", "name": "LG 8kg Front Load", "price": 749.99, "date_released": "2023-06-10"},
+        {"id": "WM003", "name": "Samsung 6.5kg Top Load", "price": 449.99, "date_released": "2022-11-30"},
+        {"id": "WM004", "name": "Bosch 7kg Front Load", "price": 699.99, "date_released": "2023-03-15"},
+        {"id": "WM005", "name": "IFB 6kg Front Load", "price": 599.99, "date_released": "2023-05-01"},
+        {"id": "WM006", "name": "Haier 6.2kg Semi-Automatic", "price": 349.99, "date_released": "2022-12-05"},
+        {"id": "WM007", "name": "Miele 9kg Premium Washer", "price": 1599.99, "date_released": "2023-07-20"}
+    ],
+    "Laptop": [
+        {"id": "LP001", "name": "Dell XPS 13", "price": 1299.99, "date_released": "2023-02-18"},
+        {"id": "LP002", "name": "MacBook Pro 16-inch", "price": 2399.99, "date_released": "2023-03-10"}
+    ],
+    "Headphone": [
+        {"id": "HP001", "name": "Sony WH-1000XM5", "price": 399.99, "date_released": "2023-01-15"},
+        {"id": "HP002", "name": "Bose QuietComfort 45", "price": 349.99, "date_released": "2022-10-10"},
+        {"id": "HP003", "name": "Apple AirPods Max", "price": 549.99, "date_released": "2023-04-20"},
+        {"id": "HP004", "name": "Sennheiser Momentum 4", "price": 399.99, "date_released": "2023-06-30"},
+        {"id": "HP005", "name": "Jabra Elite 85h", "price": 249.99, "date_released": "2023-03-01"},
+        {"id": "HP006", "name": "Beats Studio 3", "price": 299.99, "date_released": "2022-12-22"},
+        {"id": "HP007", "name": "Skullcandy Crusher ANC", "price": 199.99, "date_released": "2023-05-15"},
+        {"id": "HP008", "name": "Bowers & Wilkins PX7", "price": 399.99, "date_released": "2023-02-20"},
+        {"id": "HP009", "name": "Audio-Technica ATH-M50xBT", "price": 199.99, "date_released": "2022-07-12"},
+        {"id": "HP010", "name": "Philips PH805", "price": 249.99, "date_released": "2023-06-25"},
+        {"id": "HP011", "name": "AKG N700NC M2", "price": 299.99, "date_released": "2022-11-14"},
+        {"id": "HP012", "name": "JBL Live 660NC", "price": 229.99, "date_released": "2023-03-22"}
+    ],
+    "Smartwatch": [
+        {"id": "SW001", "name": "iWatch 15 Pro", "price": 799.99, "date_released": "2023-05-10"},
+        {"id": "SW002", "name": "Samsung Watch Z Fold 5", "price": 699.99, "date_released": "2023-02-20"},
+        {"id": "SW003", "name": "OnePlus Watch 12", "price": 249.99, "date_released": "2023-03-25"},
+        {"id": "SW004", "name": "Google Watch Fold", "price": 349.99, "date_released": "2023-07-01"}
+    ]
+}
+
+
+
+
+# Static Employee List
+EMPLOYEE_DATA = [
+    {"employeeID": "E001", "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "8901234567", "address": "101 Elm Street"},
+    {"employeeID": "E002", "firstName": "Jane", "lastName": "Smith", "homePhone": "1234567891", "officePhone": "8901234568", "address": "102 Oak Avenue"},
+    {"employeeID": "E003", "firstName": "Alice", "lastName": "Johnson", "homePhone": None, "officePhone": "8901234569", "address": "103 Pine Lane"},
+    {"employeeID": "E004", "firstName": "Bob", "lastName": "Brown", "homePhone": "1234567892", "officePhone": None, "address": "104 Maple Road"},
+    {"employeeID": "E005", "firstName": "Eve", "lastName": "Taylor", "homePhone": None, "officePhone": "8901234570", "address": "105 Cedar Drive"},
+    {"employeeID": "E006", "firstName": "Michael", "lastName": "Anderson", "homePhone": "1234567893", "officePhone": "8901234571", "address": "106 Birch Boulevard"},
+    {"employeeID": "E007", "firstName": "Sarah", "lastName": "Thomas", "homePhone": None, "officePhone": "8901234572", "address": "107 Spruce Path"},
+    {"employeeID": "E008", "firstName": "James", "lastName": "Jackson", "homePhone": "1234567894", "officePhone": None, "address": "108 Willow Way"},
+    {"employeeID": "E009", "firstName": "Emma", "lastName": "White", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
+    {"employeeID": "E010", "firstName": "Liam", "lastName": "Harris", "homePhone": "1234567895", "officePhone": "8901234574", "address": "110 Redwood Court"},
+    {"employeeID": "E011", "firstName": "Olivia", "lastName": "Martin", "homePhone": None, "officePhone": "8901234575", "address": "111 Cypress Plaza"},
+    {"employeeID": "E012", "firstName": "Noah", "lastName": "Thompson", "homePhone": "1234567896", "officePhone": None, "address": "112 Sycamore Lane"},
+    {"employeeID": "E013", "firstName": "Sophia", "lastName": "Garcia", "homePhone": "1234567897", "officePhone": "8901234576", "address": "113 Poplar Park"},
+    {"employeeID": "E014", "firstName": "Mason", "lastName": "Martinez", "homePhone": None, "officePhone": "8901234577", "address": "114 Dogwood Avenue"},
+    {"employeeID": "E015", "firstName": "Isabella", "lastName": "Robinson", "homePhone": "1234567898", "officePhone": None, "address": "115 Magnolia Circle"},
+    {"employeeID": "E016", "firstName": "Lucas", "lastName": "Clark", "homePhone": None, "officePhone": "8901234578", "address": "116 Beechwood Lane"},
+    {"employeeID": "E017", "firstName": "Mia", "lastName": "Rodriguez", "homePhone": "1234567899", "officePhone": None, "address": "117 Chestnut Way"},
+    {"employeeID": "E018", "firstName": "Ethan", "lastName": "Lewis", "homePhone": "1234567800", "officePhone": "8901234579", "address": "118 Alder Boulevard"},
+    {"employeeID": "E019", "firstName": "Charlotte", "lastName": "Lee", "homePhone": None, "officePhone": "8901234580", "address": "119 Hazel Drive"},
+    {"employeeID": "E020", "firstName": "Logan", "lastName": "Walker", "homePhone": "1234567801", "officePhone": None, "address": "120 Hawthorn Court"},
+]
+
+# Static Department List
+DEPARTMENTS = [
+    {"departmentID": "D001", "departmentName": "IT"},
+    {"departmentID": "D002", "departmentName": "HR"},
+    {"departmentID": "D003", "departmentName": "Finance"},
+    {"departmentID": "D004", "departmentName": "Operations"}
+]
+
+COMPANIES = [
+    "TechCorp", "InnovaSoft", "SkyHigh Enterprises"
+]
+
+# Map each employee to a department and a company (cyclic assignment)
+EMPLOYMENT_DETAILS = {}
+for i, employee in enumerate(EMPLOYEE_DATA):
+    department = DEPARTMENTS[i % len(DEPARTMENTS)]
+    company = COMPANIES[i % len(COMPANIES)]
+    EMPLOYMENT_DETAILS[employee["employeeID"]] = {
+        "departmentID": department["departmentID"],
+        "departmentName": department["departmentName"],
+        "companyName": company
+    }
+
+# Static Account Data
+ACCOUNTS = {}
+for employee in EMPLOYEE_DATA:
+    employee_id = employee["employeeID"]
+    account_count = random.randint(3, 7)
+    ACCOUNTS[employee_id] = [
+        {"type": random.choice(["Savings", "Credit Card", "Loan"]),
+         "accountNumber": f"{random.randint(1000000000, 9999999999)}"}
+        for _ in range(account_count)
+    ]
+
+
+
+@app.route('/api/employee_info', methods=['POST'])
+def employee_info():
+    if 'SOAPAction' not in request.headers:
+        return make_response("Forbidden: Missing SOAPAction header.", 403)
+
+    if request.content_type != 'application/xml':
+        return make_response("Invalid content type. Please provide XML input.", 400)
+
+    xml_data = request.data
+    try:
+        input_data = fromstring(xml_data)
+        first_name = input_data.find('firstName').text
+        last_name = input_data.find('lastName').text
+
+        # Search for the employee
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name), None)
+        if not employee:
+            return make_response("Employee not found.", 404)
+
+        # Build XML response
+        root = Element('EmployeeDetails')
+
+        # Add employeeID
+        employee_id_element = Element('employeeID')
+        employee_id_data = [
+            {"type": "Current", "ID": employee["employeeID"]},
+            {"type": "Previous", "ID": employee["employeeID"] + 100}
+        ]
+        random.shuffle(employee_id_data)
+        for id_data in employee_id_data:
+            type_elem = SubElement(employee_id_element, 'type')
+            type_elem.text = id_data["type"]
+            id_elem = SubElement(employee_id_element, 'ID')
+            id_elem.text = str(id_data["ID"])
+        root.append(employee_id_element)
+
+        # Add phone numbers
+        phone_element = Element('Phone')
+        phone_data = [
+            {"type": "Home", "PhoneNumber": employee["homePhone"]},
+            {"type": "Office", "PhoneNumber": employee["officePhone"]}
+        ]
+        phone_data = [entry for entry in phone_data if entry["PhoneNumber"]]
+        random.shuffle(phone_data)
+        for phone in phone_data:
+            type_elem = SubElement(phone_element, 'type')
+            type_elem.text = phone["type"]
+            phone_number_elem = SubElement(phone_element, 'PhoneNumber')
+            phone_number_elem.text = phone["PhoneNumber"]
+        root.append(phone_element)
+
+        # Add accounts
+        account_element = Element('Accounts')
+        accounts = ACCOUNTS.get(employee["employeeID"], [])
+        for account in accounts:
+            account_type_elem = SubElement(account_element, 'type')
+            account_type_elem.text = account["type"]
+            account_number_elem = SubElement(account_element, 'accountNumber')
+            account_number_elem.text = account["accountNumber"]
+        root.append(account_element)
+
+        # Add remaining details
+        for key, value in employee.items():
+            if key not in ["employeeID", "homePhone", "officePhone"]:
+                child = SubElement(root, key)
+                child.text = str(value) if value else "N/A"
+
+        response = make_response(tostring(root), 200)
+        response.headers['Content-Type'] = 'application/xml'
+        return response
+
+    except Exception as e:
+        return make_response(f"Error processing request: {str(e)}", 500)
+
+
+@app.route('/api/employment_details', methods=['POST'])
+def employment_details():
+    if 'SOAPAction' not in request.headers:
+        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
+
+    request_data = request.get_json()
+    employee_id = request_data.get('employeeID')
+    if not employee_id:
+        return jsonify({"error": "Missing employeeID"}), 400
+
+    details = EMPLOYMENT_DETAILS.get(employee_id)
+    if not details:
+        return jsonify({"error": "Employee ID not found"}), 404
+
+    return jsonify(details), 200
+
+
+@app.route('/api/employee_list', methods=['GET'])
+def employee_list():
+    if 'SOAPAction' not in request.headers:
+        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+
+        # Reshuffle the employee data
+        random.shuffle(EMPLOYEE_DATA)
+
+        employees = [
+            {"employeeID": emp["employeeID"], "firstName": emp["firstName"], "lastName": emp["lastName"],
+             "department": EMPLOYMENT_DETAILS[emp["employeeID"]]["departmentName"]}
+            for emp in EMPLOYEE_DATA
+        ]
+        return jsonify({"employees": employees}), 200
+    elif query_type == 'SINGLE':
+        employee_id = request.args.get('employeeID')
+        if not employee_id:
+            return jsonify({"error": "Missing employeeID query parameter"}), 400
+
+        employee_id = int(employee_id)
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["employeeID"] == employee_id), None)
+        if not employee:
+            return jsonify({"error": "Employee ID not found"}), 404
+
+
+        return jsonify({
+            "employeeID": employee["employeeID"],
+            "firstName": employee["firstName"],
+            "lastName": employee["lastName"],
+            "department": EMPLOYMENT_DETAILS[employee_id]["departmentName"]
+        }), 200
+
+    return jsonify({"error": "Invalid type parameter. Use 'ALL' or 'SINGLE'."}), 400
+
+
+# API to get employee and department details
+@app.route('/api/employee_details', methods=['GET'])
+def get_employee_details():
+    employee_details = []
+
+    for employee in EMPLOYEE_DATA:
+        employee_id = employee["employeeID"]
+        department = EMPLOYMENT_DETAILS.get(employee_id)
+
+        if department:
+            employee_details.append({
+                "employeeID": employee_id,
+                "departmentID": department["departmentID"],
+                "employeeName": f"{employee['firstName']} {employee['lastName']}",
+                "departmentName": department["departmentName"]
+            })
+
+    return jsonify(employee_details), 200
+
+##======================================================BANKING==============
+
+# Static Data
+customers = [
+    {"CustomerID": "C001", "FirstName": "John", "MiddleName": "Albert", "LastName": "Doe", "Street Address": "123 Elm St, NY",
+     "Phones": {"HomePhone": "123-456-7890", "OfficePhone": "987-654-3210"}},
+    {"CustomerID": "C002", "FirstName": "Jane", "LastName": "Smith", "Street Address": "456 Oak St, TX",
+     "Phones": {"OfficePhone": "222-333-4444"}},
+    {"CustomerID": "C003", "FirstName": "Alice", "LastName": "Johnson", "Street Address": "789 Pine St, CA",
+     "Phones": {"HomePhone": "555-666-7777"}},
+    {"CustomerID": "C004", "FirstName": "Robert", "LastName": "Brown", "Street Address": "321 Maple Ave, IL",
+     "Phones": {"HomePhone": "333-444-5555"}},
+    {"CustomerID": "C005", "FirstName": "Emily", "LastName": "Davis", "Street Address": "654 Spruce Dr, FL",
+     "Phones": {"OfficePhone": "777-888-9999"}},
+    {"CustomerID": "C006", "FirstName": "John", "MiddleName": "Albert", "LastName": "Doe", "Street Address": "234 Oak St, NY",
+     "Phones": {"HomePhone": "123-789-4560", "OfficePhone": "987-111-2233"}},
+    {"CustomerID": "C007", "FirstName": "Sarah", "LastName": "Wilson", "Street Address": "789 Birch Rd, NJ",
+     "Phones": {"HomePhone": "444-555-6666"}},
+    {"CustomerID": "C008", "FirstName": "Michael", "LastName": "Taylor", "Street Address": "321 Cedar Dr, OH",
+     "Phones": {"HomePhone": "222-444-5555", "OfficePhone": "555-123-4567"}},
+    {"CustomerID": "C009", "FirstName": "Emma", "LastName": "Miller", "Street Address": "543 Pine Ave, CA",
+     "Phones": {"HomePhone": "111-222-3333"}},
+    {"CustomerID": "C010", "FirstName": "David", "LastName": "Martinez", "Street Address": "987 Maple St, AZ",
+     "Phones": {"OfficePhone": "888-222-4444"}},
+    {"CustomerID": "C011", "FirstName": "John", "MiddleName": "Albert", "LastName": "Doe", "Street Address": "567 Birch St, NY",
+     "Phones": {"HomePhone": "123-555-7890", "OfficePhone": "987-333-2211"}},
+    {"CustomerID": "C012", "FirstName": "Sophia", "LastName": "Garcia", "Street Address": "876 Elm St, FL",
+     "Phones": {"HomePhone": "222-333-4444"}},
+    {"CustomerID": "C013", "FirstName": "Olivia", "LastName": "Martinez", "Street Address": "654 Cedar Rd, TX",
+     "Phones": {"OfficePhone": "555-666-7777"}},
+    {"CustomerID": "C014", "FirstName": "Lucas", "LastName": "Rodriguez", "Street Address": "321 Maple Ave, TX",
+     "Phones": {"HomePhone": "444-555-6666", "OfficePhone": "555-123-4567"}},
+    {"CustomerID": "C015", "FirstName": "Mason", "LastName": "Lopez", "Street Address": "789 Pine Ave, CA",
+     "Phones": {"HomePhone": "333-444-5555"}},
+    {"CustomerID": "C016", "FirstName": "Ava", "LastName": "Martinez", "Street Address": "567 Oak St, NJ",
+     "Phones": {"HomePhone": "123-444-5555", "OfficePhone": "987-111-3333"}},
+    {"CustomerID": "C017", "FirstName": "Elijah", "LastName": "Walker", "Street Address": "234 Cedar St, FL",
+     "Phones": {"HomePhone": "777-888-9999"}},
+    {"CustomerID": "C018", "FirstName": "Madison", "LastName": "Hernandez", "Street Address": "543 Birch Rd, IL",
+     "Phones": {"OfficePhone": "555-111-2222"}},
+    {"CustomerID": "C019", "FirstName": "Sebastian", "LastName": "Gonzalez", "Street Address": "654 Pine Dr, AZ",
+     "Phones": {"HomePhone": "333-444-5555", "OfficePhone": "888-777-6666"}},
+    {"CustomerID": "C020", "FirstName": "James", "LastName": "Roberts", "Street Address": "789 Oak Ave, NV",
+     "Phones": {"HomePhone": "444-555-6666", "OfficePhone": "999-111-2222"}}
+]
+
+
+accounts = {
+    "C001": {"Savings": ["S001", "S002"], "Credit": ["C001"], "Loan": ["L001"]},
+    "C002": {"Savings": ["S003"], "Loan": ["L002"]},
+    "C003": {"Savings": ["S004"], "Credit": ["C002", "C003"]},
+    "C004": {"Savings": ["S005"], "Credit": ["C004"], "Loan": ["L003", "L004"]},
+    "C005": {"Savings": ["S006"], "Loan": ["L005"]},
+    "C006": {"Savings": ["S007", "S008"], "Credit": ["C005", "C006"]},
+    "C007": {"Savings": ["S009"]},
+    "C008": {"Savings": ["S010"], "Credit": ["C007", "C008"]},
+    "C009": {"Loan": ["L007"]},
+    "C010": {"Savings": ["S012", "S013"], "Loan": ["L008"]},
+    "C011": { "Credit": ["C009"], "Loan": ["L009"]},
+    "C012": {"Savings": ["S015"], "Loan": ["L010"]},
+    "C013": {"Credit": ["C010"], "Loan": ["L011"]},
+    "C014": {"Credit": ["C011"], "Loan": ["L012"]},
+    "C015": {"Savings": ["S017"], "Loan": ["L013"]},
+    "C016": {"Savings": ["S018", "S019"], "Credit": ["C012"]},
+    "C017": {"Savings": ["S020"], "Loan": ["L014"]},
+    "C018": {"Credit": ["C013"]},
+    "C019": {"Savings": ["S022"], "Loan": ["L015"]},
+    "C020": {"Savings": ["S023"], "Loan": ["L016"], "Credit": ["C014"]}
+}
+
+transactions = {
+    "S001": [{"TransactionID": "T001", "Date": "2023-01-10", "Amount": 1000, "Type": "Deposit"},
+             {"TransactionID": "T002", "Date": "2023-01-12", "Amount": -200, "Type": "Withdrawal"}],
+    "S002": [{"TransactionID": "T003", "Date": "2023-02-15", "Amount": 500, "Type": "Deposit"}],
+    "C001": [{"TransactionID": "T004", "Date": "2023-01-05", "Amount": 150, "Type": "Payment"},
+             {"TransactionID": "T005", "Date": "2023-02-01", "Amount": -50, "Type": "Payment"}],
+    "L001": [{"TransactionID": "T006", "Date": "2023-01-20", "Amount": -1000, "Type": "Repayment"},
+             {"TransactionID": "T007", "Date": "2023-03-01", "Amount": -500, "Type": "Repayment"}],
+
+    "S003": [{"TransactionID": "T008", "Date": "2023-03-01", "Amount": 2000, "Type": "Deposit"}],
+    "L002": [{"TransactionID": "T009", "Date": "2023-02-10", "Amount": -500, "Type": "Repayment"}],
+
+    "S004": [{"TransactionID": "T010", "Date": "2023-01-10", "Amount": 1000, "Type": "Deposit"},
+             {"TransactionID": "T011", "Date": "2023-02-25", "Amount": -200, "Type": "Withdrawal"}],
+    "C002": [{"TransactionID": "T012", "Date": "2023-01-18", "Amount": 300, "Type": "Payment"}],
+    "C003": [{"TransactionID": "T013", "Date": "2023-01-22", "Amount": 500, "Type": "Payment"}],
+    "L003": [{"TransactionID": "T014", "Date": "2023-02-05", "Amount": -800, "Type": "Repayment"}],
+    "L004": [{"TransactionID": "T015", "Date": "2023-03-12", "Amount": -300, "Type": "Repayment"}],
+
+    "S005": [{"TransactionID": "T016", "Date": "2023-01-07", "Amount": 700, "Type": "Deposit"}],
+    "C004": [{"TransactionID": "T017", "Date": "2023-02-02", "Amount": -200, "Type": "Payment"}],
+    "L005": [{"TransactionID": "T018", "Date": "2023-02-18", "Amount": -1000, "Type": "Repayment"}],
+
+    "S006": [{"TransactionID": "T019", "Date": "2023-03-01", "Amount": 1200, "Type": "Deposit"}],
+    "L006": [{"TransactionID": "T020", "Date": "2023-02-15", "Amount": -500, "Type": "Repayment"}],
+
+    "S007": [{"TransactionID": "T021", "Date": "2023-01-12", "Amount": 400, "Type": "Deposit"},
+             {"TransactionID": "T022", "Date": "2023-03-07", "Amount": -150, "Type": "Withdrawal"}],
+    "S008": [{"TransactionID": "T023", "Date": "2023-02-21", "Amount": 1000, "Type": "Deposit"}],
+    "C005": [{"TransactionID": "T024", "Date": "2023-02-01", "Amount": 200, "Type": "Payment"}],
+
+    "S009": [{"TransactionID": "T025", "Date": "2023-01-20", "Amount": 800, "Type": "Deposit"},
+             {"TransactionID": "T026", "Date": "2023-02-13", "Amount": -100, "Type": "Withdrawal"}],
+    "L007": [{"TransactionID": "T027", "Date": "2023-03-05", "Amount": -600, "Type": "Repayment"}],
+
+    "S010": [{"TransactionID": "T028", "Date": "2023-01-10", "Amount": 2500, "Type": "Deposit"},
+             {"TransactionID": "T029", "Date": "2023-03-03", "Amount": -300, "Type": "Withdrawal"}],
+    "C006": [{"TransactionID": "T030", "Date": "2023-02-15", "Amount": 600, "Type": "Payment"}],
+
+    "S011": [{"TransactionID": "T031", "Date": "2023-01-05", "Amount": 1500, "Type": "Deposit"}],
+    "L008": [{"TransactionID": "T032", "Date": "2023-03-01", "Amount": -500, "Type": "Repayment"}],
+
+    "S012": [{"TransactionID": "T033", "Date": "2023-02-11", "Amount": 1000, "Type": "Deposit"}],
+    "S013": [{"TransactionID": "T034", "Date": "2023-02-15", "Amount": -200, "Type": "Withdrawal"}],
+
+    "C007": [{"TransactionID": "T035", "Date": "2023-01-17", "Amount": 400, "Type": "Payment"}],
+    "L009": [{"TransactionID": "T036", "Date": "2023-03-12", "Amount": -1000, "Type": "Repayment"}],
+
+    "S014": [{"TransactionID": "T037", "Date": "2023-01-02", "Amount": 800, "Type": "Deposit"}],
+    "S015": [{"TransactionID": "T038", "Date": "2023-02-08", "Amount": -100, "Type": "Withdrawal"}],
+
+    "C008": [{"TransactionID": "T039", "Date": "2023-01-30", "Amount": 300, "Type": "Payment"}],
+    "C009": [{"TransactionID": "T040", "Date": "2023-02-10", "Amount": 150, "Type": "Payment"}],
+
+    "S016": [{"TransactionID": "T041", "Date": "2023-03-01", "Amount": 1000, "Type": "Deposit"}],
+    "C010": [{"TransactionID": "T042", "Date": "2023-02-20", "Amount": 500, "Type": "Payment"}],
+
+    "L010": [{"TransactionID": "T043", "Date": "2023-03-15", "Amount": -700, "Type": "Repayment"}]
+}
+
+locations = {
+    "10001": {"City": "New York", "Country": "USA"},
+    "90001": {"City": "Los Angeles", "Country": "USA"},
+    "94105": {"City": "San Francisco", "Country": "USA"},
+    "60601": {"City": "Chicago", "Country": "USA"},
+    "30301": {"City": "Atlanta", "Country": "USA"},
+    "75201": {"City": "Dallas", "Country": "USA"},
+    "33101": {"City": "Miami", "Country": "USA"},
+    "98101": {"City": "Seattle", "Country": "USA"},
+    "85001": {"City": "Phoenix", "Country": "USA"},
+    "48201": {"City": "Detroit", "Country": "USA"}
+}
+
+# Helper Functions
+def validate_auth_header(request):
+    """Validate authorization headers."""
+    auth = request.headers.get("Authorization")
+    if not auth or auth != "Bearer API":
+        return False
+    return True
+
+# Helper function to validate SOAPAction header
+def validate_soap_action(request):
+    soap_action = request.headers.get('SOAPAction')
+    if not soap_action or soap_action != "urn:GetAccountDetails":
+        return False
+    return True
+
+@app.route('/customer/details', methods=['POST'])
+def customer_details():
+    """Customer Demographic Details API"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    first_name = data.get("FirstName", "").lower()
+    last_name = data.get("LastName", "").lower()
+    customer_id = data.get("CustomerID")
+
+    matching_customers = []
+
+    # Check for CustomerID or FirstName and LastName
+    if customer_id:
+        matching_customers = [c for c in customers if c["CustomerID"] == customer_id]
+    elif first_name and last_name:
+        matching_customers = [
+            c for c in customers if c["FirstName"].lower() == first_name and c["LastName"].lower() == last_name
+        ]
+
+    if not matching_customers:
+        return jsonify({"error": "No matching customer found"}), 404
+
+    # Randomize phone numbers and ensure address is last
+    for customer in matching_customers:
+
+        # Create FullName based on available fields
+        full_name = customer["FirstName"]
+        if "MiddleName" in customer:
+            full_name += " " + customer["MiddleName"]
+        full_name += " " + customer["LastName"]
+        customer["FullName"] = full_name
+
+        # Randomize the order of phone numbers
+        phone_items = list(customer["Phones"].items())  # Convert dictionary to a list of tuples
+        random.shuffle(phone_items)  # Randomize the order
+        customer["Phones"] = dict(phone_items)  # Convert back to a dictionary
+
+        # Reorder dictionary to ensure Address is last
+        customer_data = {key: customer[key] for key in customer if key != 'Street Address'}
+        customer_data["Street Address"] = customer["Street Address"]
+        customer.update(customer_data)
+
+
+    # Creating a response object
+    response = make_response(jsonify({"Customers": matching_customers}))
+
+    # Adding headers to prevent caching
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, proxy-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+
+    return response
+
+# Endpoint for XML response
+@app.route('/customer/details/xml', methods=['POST'])
+def customer_details_xml():
+    """Customer Demographic Details API for XML"""
+    if not validate_auth_header(request):
+        return '<error>Unauthorized</error>', 401, {'Content-Type': 'application/xml'}
+
+    # Parse XML request data
+    try:
+        data = xmltodict.parse(request.data)
+        first_name = data.get('Request', {}).get('FirstName', '').lower()
+        last_name = data.get('Request', {}).get('LastName', '').lower()
+        customer_id = data.get('Request', {}).get('CustomerID', None)
+    except Exception as e:
+        return f"<error>Invalid XML format: {str(e)}</error>", 400, {'Content-Type': 'application/xml'}
+
+    matching_customers = []
+
+    # Check for CustomerID or FirstName and LastName
+    if customer_id:
+        matching_customers = [c for c in customers if c["CustomerID"] == customer_id]
+    elif first_name and last_name:
+        matching_customers = [
+            c for c in customers if c["FirstName"].lower() == first_name and c["LastName"].lower() == last_name
+        ]
+
+    if not matching_customers:
+        return '<error>No matching customer found</error>', 404, {'Content-Type': 'application/xml'}
+
+    # Randomize phone numbers and ensure address is last
+    for customer in matching_customers:
+
+        # Create FullName based on available fields
+        full_name = customer["FirstName"]
+        if "MiddleName" in customer:
+            full_name += " " + customer["MiddleName"]
+        full_name += " " + customer["LastName"]
+        customer["FullName"] = full_name
+
+        # Randomize the order of phone numbers
+        phone_items = list(customer["Phones"].items())  # Convert dictionary to a list of tuples
+        random.shuffle(phone_items)  # Randomize the order
+        customer["Phones"] = dict(phone_items)  # Convert back to a dictionary
+
+        # Reorder dictionary to ensure Address is last
+        customer_data = {key: customer[key] for key in customer if key != 'Street Address'}
+        customer_data["Street Address"] = customer["Street Address"]
+        customer.update(customer_data)
+
+    # Convert the data back to XML format
+    response_dict = {"Customers": matching_customers}
+    xml_response = xmltodict.unparse(response_dict, pretty=True)
+
+    return make_response(xml_response, 200, {'Content-Type': 'application/xml'})
+
+@app.route('/accounts/details/xml', methods=['POST'])
+def account_details_xml():
+    """Account Details API - Accepts XML and expects SOAPAction header"""
+
+    # Validate SOAPAction header
+    if not validate_soap_action(request):
+        return jsonify({"error": "Invalid SOAPAction header"}), 400
+
+    try:
+        # Parse XML request data
+        request_data = request.data
+        root = ET.fromstring(request_data)
+
+        # Extract CustomerID from XML request
+        customer_id = root.find('CustomerID').text
+
+        if not customer_id or customer_id not in accounts:
+            return jsonify({"error": "Customer ID not found"}), 404
+
+        customer_accounts = accounts[customer_id]
+
+        # Build XML response with a wrapper element
+        response_root = ET.Element("Response")
+
+        # Add CustomerID to the response XML
+        customer_id_element = ET.SubElement(response_root, "CustomerID")
+        customer_id_element.text = customer_id
+
+        # Build XML response
+        accounts_element = ET.SubElement(response_root, "Accounts")
+
+
+        for account_type, account_list in customer_accounts.items():
+            for account_number in account_list:
+                account_element = ET.SubElement(accounts_element, "Account", {"type": account_type})
+                account_element.text = account_number
+
+        # Convert the XML response to a string
+        xml_data = ET.tostring(response_root, encoding="unicode")
+
+        return Response(xml_data, content_type="application/xml")
+
+    except ET.ParseError:
+        return jsonify({"error": "Invalid XML format"}), 400
+
+@app.route('/accounts/details', methods=['POST'])
+def account_details_json():
+    """Account Details API - Accepts XML and expects SOAPAction header"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+
+    try:
+        # Parse XML request data
+
+        data = request.json
+        customer_id = data.get("CustomerID", "").upper()
+
+        if not customer_id or customer_id not in accounts:
+            return jsonify({"error": "Customer ID not found"}), 404
+
+        customer_accounts = accounts[customer_id]
+
+        # Build JSON response
+        response_data = {
+            "CustomerID": customer_id,
+            "Accounts": []
+        }
+
+        # Add account information to the JSON response
+        for account_type, account_list in customer_accounts.items():
+            for account_number in account_list:
+                response_data["Accounts"].append({
+                    "type": account_type,
+                    "account_number": account_number
+                })
+
+        # Return the response as JSON
+        return jsonify(response_data)
+
+    except ET.ParseError:
+        return jsonify({"error": "Invalid XML format"}), 400
+
+
+
+
+@app.route('/transactions/history', methods=['POST'])
+def transaction_history():
+    """Transaction History API"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    account_number = data.get("AccountNumber")
+    if not account_number or account_number not in transactions:
+        return jsonify({"error": "Account not found"}), 404
+
+    return jsonify({"AccountNumber": account_number, "Transactions": transactions[account_number]})
+
+
+@app.route('/location/lookup', methods=['GET'])
+def location_lookup():
+    """Location Lookup API"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    zip_code = request.args.get("ZipCode", "").lower()
+
+    if zip_code == "all":
+        # If "ALL" is passed, return all locations
+        return jsonify({"Locations": locations})
+
+    if not zip_code or zip_code not in locations:
+        return jsonify({"error": "Location not found"}), 404
+
+    location = locations[zip_code]
+    return jsonify({"Location": location})
+
+
+@app.route('/customer/financial_summary', methods=['POST'])
+def financial_summary():
+    """Customer Financial Summary API"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    customer_id = data.get("CustomerID")
+    if not customer_id or customer_id not in accounts:
+        return jsonify({"error": "Customer ID not found"}), 404
+
+    customer_accounts = accounts[customer_id]
+    total_balances = {"Savings": 0, "Credit": 0, "Loan": 0}
+
+    for account_type, account_list in customer_accounts.items():
+        total_balances[account_type] = sum(
+            random.randint(500, 5000) for _ in account_list
+        )
+
+    net_worth = total_balances["Savings"] - total_balances["Credit"] - total_balances["Loan"]
+    return jsonify({"FinancialSummary": total_balances, "NetWorth": net_worth})
+
+
+@app.route('/customer/consolidated_financial_summary', methods=['POST'])
+def consolidated_financial_summary():
+    """Customer Financial Summary API"""
+    if not validate_auth_header(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.json
+    customer_id = data.get("CustomerID")
+    if not customer_id or customer_id not in accounts:
+        return jsonify({"error": "Customer ID not found"}), 404
+
+    customer_accounts = accounts[customer_id]
+    total_balances = {"Savings": 0, "Credit": 0, "Loan": 0}
+    account_transactions = {"Savings": [], "Credit": [], "Loan": []}
+
+    # Iterate over the account types
+    for account_type, account_list in customer_accounts.items():
+        account_balance = 0
+        for account_id in account_list:
+            # Generate a random balance for the account (for demo purposes)
+            account_balance += random.randint(500, 5000)
+
+            # Include transactions for this account
+            if account_id in transactions:
+                account_transactions[account_type].extend(transactions[account_id])
+
+        # Store total balance for each account type
+        total_balances[account_type] = account_balance
+
+    # Calculate net worth based on balances
+    net_worth = total_balances["Savings"] - total_balances["Credit"] - total_balances["Loan"]
+
+    # Consolidated Financial Summary
+    response = {
+        "FinancialSummary": total_balances,
+        "AccountTransactions": account_transactions,
+        "NetWorth": net_worth
+    }
+
+    return jsonify(response)
+
+
+@app.route('/customer/consolidated_financial_summary/xml', methods=['POST'])
+def consolidated_financial_summary_xml():
+        """Customer Financial Summary API that returns XML"""
+        if not validate_auth_header(request):
+            return '<error>Unauthorized</error>', 401, {'Content-Type': 'application/xml'}
+
+        data = request.json
+        customer_id = data.get("CustomerID")
+        if not customer_id or customer_id not in accounts:
+            return '<error>Customer ID not found</error>', 404, {'Content-Type': 'application/xml'}
+
+        customer_accounts = accounts[customer_id]
+        total_balances = {"Savings": 0, "Credit": 0, "Loan": 0}
+        account_transactions = {"Savings": [], "Credit": [], "Loan": []}
+
+        # Iterate over the account types
+        for account_type, account_list in customer_accounts.items():
+            account_balance = 0
+            for account_id in account_list:
+                # Generate a random balance for the account (for demo purposes)
+                account_balance += random.randint(500, 5000)
+
+                # Include transactions for this account, if available
+                if account_id in transactions:
+                    account_transactions[account_type].extend(transactions[account_id])
+
+            # Store total balance for each account type
+            total_balances[account_type] = account_balance
+
+        # Calculate net worth based on balances
+        net_worth = total_balances["Savings"] - total_balances["Credit"] - total_balances["Loan"]
+
+        # Create XML response structure
+        root = ET.Element("FinancialSummary")
+
+        # Create FinancialSummary section
+        financial_summary = ET.SubElement(root, "FinancialSummary")
+        for account_type, balance in total_balances.items():
+            account_element = ET.SubElement(financial_summary, account_type)
+            account_element.text = str(balance)
+
+        # Create AccountTransactions section
+        account_transactions_elem = ET.SubElement(root, "AccountTransactions")
+        for account_type, transactions_list in account_transactions.items():
+            account_elem = ET.SubElement(account_transactions_elem, account_type)
+            for transaction in transactions_list:
+                transaction_elem = ET.SubElement(account_elem, "Transaction")
+
+                # Ensure the 'type' and 'amount' keys exist
+                transaction_type = transaction.get("Type", "Unknown")
+                transaction_amount = transaction.get("Amount", 0)
+
+                transaction_type_elem = ET.SubElement(transaction_elem, "Type")
+                transaction_type_elem.text = str(transaction_type)
+
+                transaction_amount_elem = ET.SubElement(transaction_elem, "Amount")
+                transaction_amount_elem.text = str(transaction_amount)
+
+        # Create NetWorth section
+        net_worth_elem = ET.SubElement(root, "NetWorth")
+        net_worth_elem.text = str(net_worth)
+
+        # Convert to a string and return as an XML response
+        xml_data = ET.tostring(root, encoding="unicode", method="xml")
+
+        return Response(xml_data, content_type="application/xml")
+
+
+# Routes
+@app.route('/')
+def loginDefault():
+    return render_template('login.html')
+
+# @app.route('/login', methods=['POST'])
+# def login_submit():
+#     username = request.form.get('username')
+#     password = request.form.get('password')
+#
+#     if username == USERNAME and password == PASSWORD:
+#         session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
+#         return redirect(url_for('search'))
+#     else:
+#         flash('Invalid username or password')
+#         return redirect(url_for('login'))
+
+
+# Predefined user credentials and their allowed product categories
+USERS = {
+    "user1": {"password": "password1", "products": ["TV", "Washing Machine",  "Headphone", "Smartwatch", "Laptop"]},
+    "user2": {"password": "password2", "products": ["TV", "Smartwatch"]},
+    "user3": {"password": "password3", "products": ["Washing Machine", "Smartwatch", "Headphone"]},
+    "user4": {"password": "password4", "products": ["TV", "Washing Machine", "Smartwatch"]},
+    "user5": {"password": "password5", "products": ["Smartwatch", "Headphone", "Laptop"]},
+    "user6": {"password": "password6", "products": ["Washing Machine", "Laptop", "Smartwatch"]},
+    "user7": {"password": "password7", "products": ["TV", "Smartwatch", "Laptop", "Washing Machine",  "Headphone"]},
+    "user8": {"password": "password8", "products": ["TV", "Mobile", "Headphone", "Smartphone"]},
+    "user9": {"password": "password9", "products": ["Smartwatch", "Mobile", "Washing Machine"]},
+    "user10": {"password": "password10", "products": ["TV", "Washing Machine", "Smartwatch", "Headphone", "Laptop"]},
+}
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        print(username)
+        print(password)
+        # Authenticate user
+        user = USERS.get(username)
+        if user and user['password'] == password:
+
+
+            session['session_id'] = str(uuid.uuid4())  # Generate unique session ID
+            session['username'] = username  # Store username in session
+            flash('Login successful.')
+            print('Sucess')
+            session.pop('_flashes', None)  # This clears all flash messages
+            return redirect(url_for('search'))
+
+        flash('Invalid username or password. Please try again.')
+        return redirect(url_for('login'))
+
+    session.pop('_flashes', None)  # This clears all flash messages
+    return render_template('login.html')
+#
+# @app.route('/search')
+# def search():
+#     if 'session_id' not in session:
+#         flash('You need to login first.')
+#         return redirect(url_for('login'))
+#
+#     return render_template('search.html')
+
+@app.route('/search', methods=['GET', 'POST'])
+def search():
+    # Check if the user is logged in
+    if 'session_id' not in session or 'username' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Retrieve the logged-in user's allowed products
+    username = session['username']
+    user_products = USERS[username]['products']
+
+    # Session tokens (for simplicity, not using JWT in this example)
+    search_token = str(uuid.uuid4())
+    cart_token = str(uuid.uuid4())
+    search_expiration = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    cart_expiration = (datetime.utcnow() + timedelta(days=7)).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    session['search_token'] = search_token
+    session['cart_token'] = cart_token
+
+    response_data = {
+        "status": "success",
+        "data": {
+            "search": {
+                "user": username,
+                "session": {
+                    "token": search_token,
+                    "expiration": search_expiration
+                }
+            },
+            "cart": {
+                "user": username,
+                "session": {
+                    "token": cart_token,
+                    "expiration": cart_expiration
+                }
+            }
+        }
+    }
+
+    # Randomize the order of search and cart
+    data_keys = list(response_data['data'].keys())
+    random.shuffle(data_keys)  # Shuffle the keys to randomize their order
+
+    # Create a new dictionary with randomized key order
+    randomized_response_data = {
+        "status": response_data["status"],
+        "data": {key: response_data["data"][key] for key in data_keys}
+    }
+
+    random.shuffle(user_products)
+
+    return render_template('search.html', products=user_products, response_data=randomized_response_data)
+
+# @app.route('/search_results', methods=['GET', 'POST'])
+# def search_results():
+#     # Check if the user is logged in (session ID validation)
+#     if 'session_id' not in session:
+#         flash('You need to log in first.')
+#         return redirect(url_for('login'))
+#
+#     # Handle GET request (e.g., direct URL access)
+#     if request.method == 'GET':
+#         flash('Please perform a search first.')
+#         return redirect(url_for('search'))
+#
+#     category = request.form.get('category')
+#     query = request.form.get('query').lower() if request.form.get('query') else None
+#
+#     results = []
+#     if query:
+#         # Perform free text search across all categories
+#         for items in SEARCH_RESULTS.values():
+#             results.extend([item for item in items if query in item.lower()])
+#     elif category:
+#         # Retrieve items from the selected category
+#         results = SEARCH_RESULTS.get(category, [])
+#
+#     random.shuffle(results)  # Randomize results
+#     return render_template('search_results.html', results=results)
+
+@app.route('/search_results', methods=['GET', 'POST'])
+def search_results():
+    # Check if the user is logged in (session ID validation)
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Handle GET request (e.g., direct URL access)
+    if request.method == 'GET':
+        flash('Please perform a search first.')
+        return redirect(url_for('search'))
+
+    # Retrieve the search_token sent in the form
+    form_token = request.form.get('search_token')
+
+    # Retrieve the stored search_token from the session
+    stored_token = session.get('search_token')
+
+    # Verify if the search_token matches
+    if not form_token or form_token != stored_token:
+        flash("Session mismatch or invalid token. Please try again.")
+        return redirect(url_for('search'))  # Redirect to search page in case of mismatch
+
+    category = request.form.get('category')
+    query = request.form.get('query').lower() if request.form.get('query') else None
+
+    results = []
+    if query:
+        # Perform free text search across all categories
+        for items in SEARCH_RESULTS.values():
+            results.extend([item for item in items if query in item['name'].lower()])
+    elif category:
+        # Retrieve items from the selected category
+        results = SEARCH_RESULTS.get(category, [])
+    # print(results)
+
+    random.shuffle(results)  # Randomize results
+    session['search_results'] = results  # Save results to the session for later validation
+
+    return render_template('search_results.html', results=results)
+
+
+@app.route('/add_to_cart', methods=['POST'])
+def add_to_cart():
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    item = request.form.get('item')
+    if 'cart' not in session:
+        session['cart'] = []
+
+    session['cart'].append(item)
+    session.modified = True
+    flash(f'Added {item} to cart.')
+    return redirect(url_for('cart'))
+
+
+@app.route('/add_selected_to_cart', methods=['POST'])
+def add_selected_to_cart():
+    # Ensure the user is logged in
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Retrieve form data
+    cart_items = session.get('cart', {})
+
+    # Loop through the form data to process each product ID
+    for product_id, value in request.form.items():
+        if value == 'true':  # If the item is selected
+            if product_id not in cart_items:
+                cart_items[product_id] = 1  # Add to cart with quantity 1
+            else:
+                cart_items[product_id] += 1  # Increment quantity if already in cart
+        elif value == 'false':  # If the item is not selected
+            if product_id in cart_items:
+                del cart_items[product_id]  # Remove from cart if unchecked
+
+    # Save the updated cart to session
+    session['cart'] = cart_items
+    flash('Selected items added to cart successfully.')
+
+    return redirect(url_for('cart'))  # Redirect to cart page
+
+
+# @app.route('/remove_from_cart', methods=['POST'])
+# def remove_from_cart():
+#     # Check if the user is logged in
+#     if 'session_id' not in session:
+#         flash('You need to log in first.')
+#         return redirect(url_for('login'))
+#
+#     # Retrieve the product ID to remove from the form data
+#     product_id = request.form.get('product_id')
+#     print(product_id)
+#     # Ensure that product_id is provided
+#     if not product_id:
+#         flash('No product ID provided for removal.')
+#         return redirect(url_for('cart'))
+#
+#     # Retrieve cart data from session
+#     cart_items = session.get('cart', {})
+#     print(cart_items)
+#     # Ensure product ID exists in the cart
+#     if product_id in cart_items:
+#         # If the quantity is greater than 1, decrease it
+#         if cart_items[product_id] > 1:
+#             print('dd')
+#             cart_items[product_id] -= 1
+#             flash(f'Removed one unit of {product_id} from cart.')
+#         else:
+#             print('hi')
+#             # If quantity is 1, remove the item completely
+#             del cart_items[product_id]
+#             flash(f'{product_id} removed from cart.')
+#
+#         # Save the updated cart back to session
+#         session['cart'] = cart_items
+#         session.modified = True
+#     else:
+#         flash(f'Product {product_id} not found in cart.')
+#
+#     return redirect(url_for('cart'))
+
+@app.route('/remove_from_cart', methods=['POST'])
+def remove_from_cart():
+    # Check if the user is logged in (session ID validation)
+    if 'session_id' not in session:
+        flash('You need to login first.')
+        return redirect(url_for('login'))
+
+    # Retrieve the cart from the session
+    cart_items = session.get('cart', {})
+
+    # Get the index of the item to remove (from form data)
+    index_to_remove = request.form.get('index')
+
+    # Ensure index is an integer
+    try:
+        index_to_remove = int(index_to_remove)
+    except ValueError:
+        flash('Invalid index value.')
+        return redirect(url_for('cart'))
+
+    # Convert the dictionary into a list of keys (product IDs)
+    keys_list = list(cart_items.keys())
+
+    # Debug: Print the index and keys
+    # print(f"Index to remove: {index_to_remove}")
+    # print(f"Keys List: {keys_list}")
+
+    # Check if the index is valid
+    if 0 <= index_to_remove < len(keys_list):
+        product_id_to_remove = keys_list[index_to_remove]
+
+        # Remove the item by its product ID
+        del cart_items[product_id_to_remove]
+        session['cart'] = cart_items  # Save the updated cart back to session
+
+        flash(f'Item {product_id_to_remove} removed from cart.')
+    else:
+        flash('Invalid index, item not found in cart.')
+
+    return redirect(url_for('cart'))
+
+#
+# @app.route('/export_cart_csv', methods=['GET'])
+# def export_cart_csv():
+#     if 'session_id' not in session:
+#         flash('You need to log in first.')
+#         return redirect(url_for('login'))
+#
+#     cart_items = session.get('cart', {})
+#     if not cart_items:
+#         flash("Cart is empty, nothing to export.")
+#         return redirect(url_for('cart'))
+#
+#     # Create a CSV output
+#     output = []
+#     output.append(['Product ID', 'Product Name', 'Quantity', 'Price', 'Date_Released'])
+#
+#     for product_id, quantity in cart_items.items():
+#         # Look up the product name from SEARCH_RESULTS
+#         product_name = None
+#         price = None
+#         date_released = None
+#         for category, items in SEARCH_RESULTS.items():
+#             for item in items:
+#                 if item['id'] == product_id:
+#                     product_name = item['name']
+#                     price = item['price']
+#                     date_released = item['date_released']
+#                     break
+#             if product_name:
+#                 break
+#
+#         # Append the product details to the output
+#         if product_name:
+#             output.append([product_id, product_name, quantity, price, date_released])
+#         else:
+#             flash(f"Product ID {product_id} not found in search results.")
+#             continue
+#
+#     # Generate CSV response
+#     def generate_csv():
+#         csvfile = csv.StringIO()
+#         csvwriter = csv.writer(csvfile)
+#         csvwriter.writerows(output)
+#         csvfile.seek(0)
+#         yield csvfile.read()
+#
+#     return Response(
+#         generate_csv(),
+#         content_type='text/csv',
+#         headers={'Content-Disposition': 'attachment;filename=cart.csv'}
+#     )
+
+@app.route('/export_cart_csv', methods=['GET'])
+def export_cart_csv():
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    cart_items = session.get('cart', {})
+    if not cart_items:
+        flash("Cart is empty, nothing to export.")
+        return redirect(url_for('cart'))
+
+    # Randomly introduce an error or truncate results
+    random_event = random.choice(['truncate', 'normal', 'error'])
+
+    if random_event == 'error':
+        flash("An unexpected error occurred while exporting the cart.")
+        return redirect(url_for('cart'))
+
+    # Create a CSV output
+    output = []
+    output.append(['Product ID', 'Product Name', 'Quantity', 'Price', 'Date_Released'])
+
+    truncated = False
+    for i, (product_id, quantity) in enumerate(cart_items.items()):
+        # Truncate results randomly
+        if random_event == 'truncate' and i > len(cart_items) // 2:
+            truncated = True
+            break
+
+        # Look up the product details from SEARCH_RESULTS
+        product_name = None
+        price = None
+        date_released = None
+        for category, items in SEARCH_RESULTS.items():
+            for item in items:
+                if item['id'] == product_id:
+                    product_name = item['name']
+                    price = item['price']
+                    date_released = item['date_released']
+                    break
+            if product_name:
+                break
+
+        # Append the product details to the output
+        if product_name:
+            output.append([product_id, product_name, quantity, price, date_released])
+        else:
+            flash(f"Product ID {product_id} not found in search results.")
+            continue
+
+    # If truncated, include a message in the CSV but still return the CSV
+    if truncated:
+        output.append(["NOTE", "Results were truncated due to system limitations. Only a partial export is available."])
+
+    # Generate CSV response
+    def generate_csv():
+        csvfile = csv.StringIO()
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerows(output)
+        csvfile.seek(0)
+        yield csvfile.read()
+
+    # Clear any flash messages before sending the response
+    session.pop('_flashes', None)  # This clears all flash messages
+    return Response(
+        generate_csv(),
+        content_type='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=cart.csv'}
+    )
+
+@app.route('/cart')
+def cart():
+
+    # Check if the user is logged in
+    if 'session_id' not in session:
+        flash('You need to log in first.')
+        return redirect(url_for('login'))
+
+    # Retrieve cart data from session
+    cart_items = session.get('cart', {})
+
+    # Build a detailed cart with product names
+    detailed_cart = []
+    for prod_id, quantity in cart_items.items():
+        for items in SEARCH_RESULTS.values():
+            for item in items:
+                if item['id'] == prod_id:
+                    detailed_cart.append({
+                        'id': prod_id,
+                        'name': item['name'],
+                        'quantity': quantity
+                    })
+
+    return render_template('cart.html', cart=detailed_cart)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Logged out successfully.')
+    session.pop('_flashes', None)  # This clears all flash messages
+    return redirect(url_for('login'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
