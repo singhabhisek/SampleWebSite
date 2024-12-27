@@ -1,3 +1,103 @@
+Consolidated LoadRunner Scripting Questions
+Below is the consolidated list of complex LoadRunner scripting questions for the APIs provided:
+
+API 1: Customer Details (XML)
+Question 1: Advanced Parameterization and Correlation
+
+Write a LoadRunner script to extract all CustomerID values dynamically from the XML response.
+Loop through and log each extracted CustomerID.
+Validate the extracted IDs by logging them in the Action section of your script.
+Question 2: Handling Nested XML Structures
+
+Dynamically identify customers whose Street Address contains "Oak St".
+Correlate and log the OfficePhone and HomePhone for these customers.
+Add error handling for scenarios where no matching address is found.
+Question 3: Custom XML Assertions and Validation
+
+Validate the presence of the FullName field for each customer in the response.
+Verify that the value of FullName matches FirstName + " " + MiddleName + " " + LastName.
+Log a pass or fail message for each validation and stop execution if any mismatch is detected.
+API 2: Account Details (JSON)
+Question 4: Extracting and Validating Specific Data
+
+Extract all account_number values for accounts of type Savings.
+Validate that the count of Savings accounts matches the expected count (2). Log an error message if the count doesn't match.
+Question 5: Handling JSON Response with Conditional Correlation
+
+Extract the account_number where the type is Loan.
+Log the extracted account_number and implement error handling for scenarios where no Loan account exists.
+Question 6: End-to-End Workflow Testing
+
+Extract all CustomerID values from API 1.
+For each CustomerID, call API 2 and retrieve the list of all account_number values.
+Log the CustomerID alongside their corresponding account_number values for each account type.
+Handle scenarios where a CustomerID has no associated accounts.
+API 3: Transaction History (JSON)
+Question 7: Transaction Filtering and Validation
+
+Extract all transactions of type Deposit from the response.
+Log the TransactionID and Amount for each Deposit.
+Validate that the Amount of each deposit is greater than zero.
+Question 8: Dynamic Workflow with Account Correlation
+
+Extract all account_number values from API 2.
+For each account_number, call API 3 to fetch the transaction history.
+Log the TransactionID, Type, and Amount for each transaction and handle scenarios where an account has no transactions.
+Question 9: Advanced Aggregation and Reporting
+
+Retrieve all transactions for a given AccountNumber.
+Compute and log the total balance based on the transaction amounts (Deposit adds, Withdrawal subtracts).
+Count the total number of transactions and validate the computed balance matches the expected sum.
+API 4: Location Lookup (JSON)
+Question 10: Dynamic Location Extraction and Validation
+
+Extract all ZipCode values dynamically and log the corresponding City and Country.
+Validate that all Country values are "USA".
+Question 11: Filtering Locations Based on Conditions
+
+Extract and log all City names where the ZipCode starts with "9".
+Log the total count of cities that satisfy the condition and handle scenarios where no cities match.
+Question 12: Multi-API Workflow with Location Validation
+
+Extract all ZipCode values from API 4.
+Parse the zip code from the Street Address in API 1.
+Validate that the parsed zip code exists in API 4's zip codes. Log the City and Country for each validated zip code, along with the associated customer’s FullName.
+API 5: Financial Summary (XML)
+Question 13: Extracting and Validating Financial Summaries
+
+Extract the values of Savings, Credit, and Loan from the FinancialSummary.
+Validate that the computed Net Worth matches the NetWorth field.
+Question 14: Aggregating Transaction Data
+
+Extract all Transaction amounts for the Savings and Loan accounts. Compute and log the total for each.
+Validate that the totals match the difference between the initial balances and the sum of transactions.
+Question 15: Comprehensive Financial Workflow with Multi-Level Correlation
+
+Extract all CustomerID values from API 1.
+Call API 5 for each CustomerID to retrieve Savings, Credit, and Loan balances.
+For each account type, extract and compute the net effect of transactions. Validate that the net effect aligns with the balances in the FinancialSummary.
+API 7: Customer Details (JSON)
+Question 16: Multi-Customer Correlation and Validation
+
+Extract all CustomerID values for customers with the last name Doe.
+Log the Street Address and OfficePhone for each extracted CustomerID.
+Validate that each FullName includes the middle name "Albert".
+Question 17: Filtering Customer Data Based on Address
+
+Identify customers whose Street Address contains "Oak St".
+Log the CustomerID, HomePhone, and FullName for these customers.
+Question 18: End-to-End Workflow for Customer Validation
+
+Extract all CustomerID values from API 7.
+For each CustomerID, call API 5 to retrieve Savings, Credit, and Loan balances.
+Log the FullName, HomePhone, and financial summary for each customer.
+Validate that the Savings balance is greater than zero for each customer.
+This consolidated list covers dynamic correlations, advanced validations, multi-API workflows, and comprehensive data handling for performance scripting using LoadRunner
+
+
+
+======================================
+
 1. Employee Details API
 Endpoint:
 
