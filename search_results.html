@@ -57,23 +57,44 @@
 </head>
 <body>
     <h1>Search Results</h1>
-    <table>
-        <tr>
-            <th>Item</th>
-            <th>Action</th>
-        </tr>
-        {% for item in results %}
-        <tr>
-            <td>{{ item }}</td>
-            <td>
-                <form method="POST" action="/add_to_cart">
-                    <input type="hidden" name="item" value="{{ item }}">
-                    <button type="submit">Add to Cart</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+
+
+    <form method="POST" action="/add_selected_to_cart">
+        <!-- Export to CSV Button -->
+
+        <table>
+            <tr>
+                <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"> Select All</th>
+                <th>Product ID</th>
+                <th>Product Name</th>
+                <th>Price</th>
+                <th>Date Released</th>
+            </tr>
+            {% for item in results %}
+            <tr>
+                <td>
+                    <input type="checkbox" name="{{ item['id'] }}" value="true">
+                    <input type="hidden" name="{{ item.id }}" value="false"> <!-- Ensures false is passed for unchecked items -->
+                </td>
+                <td>{{ item['id'] }}</td>
+                <td>{{ item['name'] }}</td>
+                <td>{{ item['price'] }}</td>
+                <td>{{ item['date_released'] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit">Add Selected to Cart</button>
+    </form>
     <a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
+
+     <script>
+        function toggleSelectAll() {
+            var selectAllCheckbox = document.getElementById('selectAll');
+            var checkboxes = document.querySelectorAll('input[type="checkbox"]:not(#selectAll)');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+    </script>
 </body>
 </html>
