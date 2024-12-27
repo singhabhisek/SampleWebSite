@@ -5,16 +5,16 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
             background-color: #f4f4f9;
             color: #333;
+            text-align: center;
+            padding: 20px;
         }
         h1 {
-            text-align: center;
             color: #2c3e50;
         }
         table {
-            width: 50%;
+            width: 70%;
             margin: 20px auto;
             border-collapse: collapse;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -32,7 +32,7 @@
             background-color: #ffffff;
         }
         button {
-            background-color: #e74c3c;
+            background-color: #c0392b;
             color: white;
             border: none;
             padding: 8px 12px;
@@ -41,13 +41,7 @@
             border-radius: 4px;
         }
         button:hover {
-            background-color: #c0392b;
-        }
-        .message {
-            text-align: center;
-            font-size: 18px;
-            color: #7f8c8d;
-            margin-top: 20px;
+            background-color: #e74c3c;
         }
         a {
             display: inline-block;
@@ -59,33 +53,80 @@
         a:hover {
             color: #1abc9c;
         }
+
     </style>
+
+    <script>
+        // Function to clear flash messages when the button is clicked
+        function clearFlashMessages() {
+            let flashMessages = document.getElementById("flash-messages");
+            if (flashMessages) {
+                flashMessages.innerHTML = '';  // Clear all flash messages
+            }
+        }
+
+    </script>
+
 </head>
 <body>
-    <h1>Your Cart</h1>
-    {% if cart_items %}
-        <table>
-            <tr>
-                <th>Item</th>
-                <th>Action</th>
-            </tr>
-            {% for item in cart_items %}
-            <tr>
-                <td>{{ item }}</td>
-                <td>
-                    <form method="POST" action="/remove_from_cart">
-                        <input type="hidden" name="item" value="{{ item }}">
-                        <button type="submit">Remove</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% else %}
-        <p class="message">NO ITEM PRESENT</p>
+<h1>Your Cart</h1>
+
+<form action="/export_cart_csv" method="GET" onsubmit="clearFlashMessages()">
+    <button type="submit">Export Cart as CSV</button>
+</form>
+
+<div id="flash-messages">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
     {% endif %}
-    <div style="text-align: center;">
-        <a href="/search">Search More</a> | <a href="/logout">Logout</a>
-    </div>
+    {% endwith %}
+</div>
+
+<!-- Show the message if there is one -->
+<!--    {% if message %}-->
+<!--        <div class="message">-->
+<!--            {{ message }}-->
+<!--        </div>-->
+<!--    {% endif %}-->
+
+{% if cart %}
+<table>
+    <thead>
+    <tr>
+        <th>Product ID</th>
+        <th>Product Name</th>
+        <th>Quantity</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% set index = 0 %}
+    {% for item in cart %}
+    <tr>
+        <td style="display:none">{{ loop.index0 }}</td>
+        <td>{{ item.id }}</td>
+        <td>{{ item.name }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>
+            <form action="/remove_from_cart" method="POST">
+                <input name="index" type="hidden" value="{{ loop.index0 }}">
+                <button type="submit">Remove</button>
+            </form>
+        </td>
+    </tr>
+    {% set index = index + 1 %}
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Your cart is empty.</p>
+{% endif %}
+<a href="/search">Go Back to Search</a> | <a href="/logout">Logout</a>
 </body>
 </html>
+
