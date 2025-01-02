@@ -1,3 +1,116 @@
+Scenario: Find TVs released before 2023 with a price between $200 and $500, and the name contains "Vizio".
+
+Scenario: Find TVs released after 2022 with a price between $500 and $1000, and the name contains "Sony" or "Panasonic".
+Write a LoadRunner script to filter TVs released after 2022, with a price range of $500 to $1000, and whose name contains "Sony" or "Panasonic".
+
+Scenario: Find Mobiles released in 2023 with a price between $600 and $1200, and the name contains "Pro" or "Max".
+Write a LoadRunner script to filter Mobiles released in 2023, with a price range of $600 to $1200, and whose name contains "Pro" or "Max".
+
+Scenario: Find Washing Machines released between 2022 and 2023 with a price between $400 and $900, and the name contains "IFB".
+Write a LoadRunner script to filter washing machines released between 2022 and 2023, with a price range of $400 to $900, and whose name contains "IFB".
+
+Scenario: Find Laptops released after February 2023 with a price greater than $1500.
+Write a LoadRunner script to filter laptops released after February 2023, with a price greater than $1500.
+
+Scenario: Find Headphones released before 2023 with a price under $300, and the name contains "Skullcandy".
+Write a LoadRunner script to filter headphones released before 2023, with a price under $300, and whose name contains "Skullcandy".
+
+Scenario: Find Smartwatches with a price greater than $500, released after March 2023, and the name contains "Pro".
+Write a LoadRunner script to filter smartwatches with a price greater than $500, released after March 2023, and whose name contains "Pro".
+
+Scenario: Find TVs released in 2023 with a price below $500, and the name contains "Sharp" or "TCL".
+Write a LoadRunner script to filter TVs released in 2023, with a price below $500, and whose name contains "Sharp" or "TCL".
+
+Scenario: Find Mobiles released between 2022 and 2023 with a price range of $400 to $800, and the name contains "Pixel" or "Galaxy".
+Write a LoadRunner script to filter mobiles released between 2022 and 2023, with a price range of $400 to $800, and whose name contains "Pixel" or "Galaxy".
+
+Scenario: Find Washing Machines released after 2023 with a price range of $500 to $1500.
+Write a LoadRunner script to filter washing machines released after 2023, with a price range of $500 to $1500.
+
+Scenario: Find Laptops released before 2023 with a price range between $1000 and $2500, and the name contains "MacBook".
+Write a LoadRunner script to filter laptops released before 2023, with a price range between $1000 and $2500, and whose name contains "MacBook".
+
+Scenario: Select the 4th TV from the list with a price greater than $600 and print its details.
+Write a LoadRunner script to filter TVs where the price is greater than $600, select the 4th TV in the filtered list, and print its ID, name, price, and release date.
+
+Scenario: Select the 10th Mobile released in 2023 and print its details.
+Write a LoadRunner script to filter Mobiles released in 2023, select the 10th Mobile in the list, and print its ID, name, price, and release date.
+
+Scenario: Select the 2nd Washing Machine with a price between $500 and $900 and print its details.
+Write a LoadRunner script to filter washing machines with a price range between $500 and $900, select the 2nd washing machine in the filtered list, and print its ID, name, price, and release date.
+
+Scenario: Select the 5th Headphone released before 2023 and print its details.
+Write a LoadRunner script to filter headphones released before 2023, select the 5th headphone in the filtered list, and print its ID, name, price, and release date.
+
+------------------
+
+
+LoadRunner Scripting Challenges
+List all saving accounts ending with '3' having customer location as Miami
+
+Extract and list all savings accounts that end with the digit '3' where the customer's location is Miami.
+Find all transactions with "Deposit" type for customers from New York
+
+Identify all deposit transactions for customers whose location is New York and list the corresponding account IDs and amounts.
+Calculate the total loan repayments for customers from Phoenix
+
+Sum all repayment amounts from loan accounts for customers whose location is Phoenix and provide the total repayment amount.
+Identify customers with more than one credit account
+
+List customers who have more than one credit account and include their customer ID, first name, last name, and the credit account IDs.
+Generate a report of all accounts with both "Deposit" and "Withdrawal" transaction types
+
+Identify and list accounts that have both "Deposit" and "Withdrawal" transaction types, including account ID and transaction details.
+List customers with an active loan and credit account from Chicago
+
+Identify all customers located in Chicago who have both a loan and a credit account, and list their details (CustomerID, Full Name, Account Type).
+Find all customers who have made a payment for a loan account
+
+List customers who have made a payment for their loan account. Include Customer ID, Full Name, Loan Account, Transaction Amount, and Transaction Type.
+List all accounts associated with the customer "John Albert Doe" from NY
+
+Identify and list all accounts (Savings, Credit, Loan) associated with customer "John Albert Doe" whose location is New York.
+Find all customers with the highest number of transactions in the month of March 2023
+
+Identify which customer(s) have the highest number of transactions (of any type) in the month of March 2023 and display the transaction details.
+Identify all accounts that have had a repayment transaction with an amount greater than $500
+
+List all accounts that have had a repayment transaction of greater than $500 and display the details of those repayments.
+Generate a report of customers who have savings accounts with a balance greater than $1000
+
+Identify customers who have a savings account with a balance greater than $1000 (based on deposit/withdrawal transaction amounts).
+Find all customers who live in cities with zip codes starting with '9'
+
+Identify customers whose location has a zip code starting with '9' (e.g., Los Angeles, San Francisco, Seattle) and list their customer details.
+List the total number of credit and loan accounts for customers in Dallas
+
+Calculate the total number of credit and loan accounts for all customers located in Dallas.
+Find all customers who have made at least one deposit of $1000 or more
+
+List all customers who have made a deposit of $1000 or more, including the details of those deposit transactions.
+Identify all transactions made by customers with an office phone number starting with '987'
+
+Identify all transactions (Deposit, Withdrawal, Payment, Repayment) made by customers whose office phone number starts with '987'. List account IDs, transaction types, and amounts.
+Generate a report for all repayment transactions for customers located in San Francisco
+
+List all repayment transactions for customers located in San Francisco, including customer details and repayment amounts.
+Find all customers from Detroit with at least one loan repayment of less than $500
+
+List customers from Detroit who have made at least one loan repayment with an amount less than $500.
+Calculate the average deposit amount for customers from Atlanta
+
+Calculate the average deposit amount for all customers located in Atlanta and display the result.
+Find customers who have both savings and credit accounts but no loan accounts
+
+Identify customers who have both savings and credit accounts but do not have any loan accounts, and list their details.
+
+
+--------------------------------
+
+
+
+
+
 TV
 id	name	price	date_released
 TV001	Samsung 32 inch Smart TV	299.99	2022-05-15
