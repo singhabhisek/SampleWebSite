@@ -1,3 +1,69 @@
+TV
+id	name	price	date_released
+TV001	Samsung 32 inch Smart TV	299.99	2022-05-15
+TV002	LG OLED 55 inch TV	1299.99	2023-02-10
+TV003	Sony Bravia 50 inch TV	999.99	2023-03-20
+TV004	Panasonic 43 inch Smart TV	599.99	2022-08-01
+TV005	TCL 40 inch Full HD TV	349.99	2022-11-12
+TV006	Vizio 60 inch 4K TV	749.99	2023-01-05
+TV007	Sharp Aquos 50 inch TV	799.99	2023-06-25
+TV008	Philips 55 inch Smart TV	899.99	2023-04-30
+TV009	Hisense 65 inch TV	679.99	2022-09-14
+TV010	RCA 32 inch HD TV	199.99	2022-12-22
+TV011	Insignia 39 inch TV	249.99	2023-03-15
+TV012	Toshiba Fire TV 43 inch	429.99	2023-05-10
+Mobile
+id	name	price	date_released
+MO001	iPhone 14 Pro Max	1099.99	2022-09-16
+MO002	Samsung Galaxy S23 Ultra	1199.99	2023-02-01
+MO003	OnePlus Nord 3	399.99	2023-07-15
+MO004	Google Pixel 8	799.99	2023-10-04
+MO005	Xiaomi Mi 13	599.99	2023-03-10
+MO006	Oppo Reno 10 Pro	649.99	2023-06-18
+MO007	Vivo X80 Pro	699.99	2022-07-12
+MO008	Motorola Edge 40	499.99	2023-05-25
+MO009	Realme GT 3	449.99	2023-04-15
+MO010	Asus ROG Phone 7	999.99	2023-03-30
+MO011	Nokia XR20	549.99	2022-08-01
+MO012	Sony Xperia 1 IV	1299.99	2023-01-25
+Washing Machine
+id	name	price	date_released
+WM001	Whirlpool 7kg Fully Automatic	499.99	2023-01-20
+WM002	LG 8kg Front Load	749.99	2023-06-10
+WM003	Samsung 6.5kg Top Load	449.99	2022-11-30
+WM004	Bosch 7kg Front Load	699.99	2023-03-15
+WM005	IFB 6kg Front Load	599.99	2023-05-01
+WM006	Haier 6.2kg Semi-Automatic	349.99	2022-12-05
+WM007	Miele 9kg Premium Washer	1599.99	2023-07-20
+Laptop
+id	name	price	date_released
+LP001	Dell XPS 13	1299.99	2023-02-18
+LP002	MacBook Pro 16-inch	2399.99	2023-03-10
+Headphone
+id	name	price	date_released
+HP001	Sony WH-1000XM5	399.99	2023-01-15
+HP002	Bose QuietComfort 45	349.99	2022-10-10
+HP003	Apple AirPods Max	549.99	2023-04-20
+HP004	Sennheiser Momentum 4	399.99	2023-06-30
+HP005	Jabra Elite 85h	249.99	2023-03-01
+HP006	Beats Studio 3	299.99	2022-12-22
+HP007	Skullcandy Crusher ANC	199.99	2023-05-15
+HP008	Bowers & Wilkins PX7	399.99	2023-02-20
+HP009	Audio-Technica ATH-M50xBT	199.99	2022-07-12
+HP010	Philips PH805	249.99	2023-06-25
+HP011	AKG N700NC M2	299.99	2022-11-14
+HP012	JBL Live 660NC	229.99	2023-03-22
+Smartwatch
+id	name	price	date_released
+SW001	iWatch 15 Pro	799.99	2023-05-10
+SW002	Samsung Watch Z Fold 5	699.99	2023-02-20
+SW003	OnePlus Watch 12	249.99	2023-03-25
+SW004	Google Watch Fold	349.99	2023-07-01
+
+==================
+
+
+
 Customers - 
 
   CustomerID,FirstName,MiddleName,LastName,Street Address,HomePhone,OfficePhone
