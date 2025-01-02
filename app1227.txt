@@ -1026,6 +1026,14 @@ def add_to_cart():
     return redirect(url_for('cart'))
 
 
+@app.route('/clear_cart', methods=['POST'])
+def clear_cart():
+    """Clear all items from the cart."""
+    if 'cart' in session:
+        session['cart'] = {}  # Clear the cart
+    flash("Your cart has been cleared.")
+    return redirect(url_for('cart'))
+
 @app.route('/add_selected_to_cart', methods=['POST'])
 def add_selected_to_cart():
     # Ensure the user is logged in
@@ -1043,9 +1051,9 @@ def add_selected_to_cart():
                 cart_items[product_id] = 1  # Add to cart with quantity 1
             else:
                 cart_items[product_id] += 1  # Increment quantity if already in cart
-        elif value == 'false':  # If the item is not selected
-            if product_id in cart_items:
-                del cart_items[product_id]  # Remove from cart if unchecked
+        # elif value == 'false':  # If the item is not selected
+        #     if product_id in cart_items:
+        #         del cart_items[product_id]  # Remove from cart if unchecked
 
     # Save the updated cart to session
     session['cart'] = cart_items
@@ -1238,6 +1246,8 @@ def export_cart_csv():
 
     # If truncated, include a message in the CSV but still return the CSV
     if truncated:
+        flash("The export was truncated due to system limitations. Only partial results are included.")
+
         output.append(["NOTE", "Results were truncated due to system limitations. Only a partial export is available."])
 
     # Generate CSV response
