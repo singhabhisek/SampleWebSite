@@ -1,0 +1,212 @@
+Customers - 
+
+  CustomerID,FirstName,MiddleName,LastName,Street Address,HomePhone,OfficePhone
+C001,John,Albert,Doe,123 Elm St, NY,123-456-7890,987-654-3210
+C002,Jane,,Smith,456 Oak St, TX,,222-333-4444
+C003,Alice,,Johnson,789 Pine St, CA,555-666-7777,
+C004,Robert,,Brown,321 Maple Ave, IL,333-444-5555,
+C005,Emily,,Davis,654 Spruce Dr, FL,,777-888-9999
+C006,John,Albert,Doe,234 Oak St, NY,123-789-4560,987-111-2233
+C007,Sarah,,Wilson,789 Birch Rd, NJ,444-555-6666,
+C008,Michael,,Taylor,321 Cedar Dr, OH,222-444-5555,555-123-4567
+C009,Emma,,Miller,543 Pine Ave, CA,111-222-3333,
+C010,David,,Martinez,987 Maple St, AZ,,888-222-4444
+C011,John,Albert,Doe,567 Birch St, NY,123-555-7890,987-333-2211
+C012,Sophia,,Garcia,876 Elm St, FL,222-333-4444,
+C013,Olivia,,Martinez,654 Cedar Rd, TX,,555-666-7777
+C014,Lucas,,Rodriguez,321 Maple Ave, TX,444-555-6666,555-123-4567
+C015,Mason,,Lopez,789 Pine Ave, CA,333-444-5555,
+C016,Ava,,Martinez,567 Oak St, NJ,123-444-5555,987-111-3333
+C017,Elijah,,Walker,234 Cedar St, FL,777-888-9999,
+C018,Madison,,Hernandez,543 Birch Rd, IL,,555-111-2222
+C019,Sebastian,,Gonzalez,654 Pine Dr, AZ,333-444-5555,888-777-6666
+C020,James,,Roberts,789 Oak Ave, NV,444-555-6666,999-111-2222
+
+
+  Accounts- 
+
+  CustomerID,Savings,Credit,Loan
+C001,S001,S002,C001,L001
+C002,S003,,L002
+C003,S004,C002,C003
+C004,S005,C004,L003,L004
+C005,S006,,L005
+C006,S007,S008,C005,C006
+C007,S009,, 
+C008,S010,C007,C008
+C009,,L007
+C010,S012,S013,L008
+C011,,C009,L009
+C012,S015,L010
+C013,,C010,L011
+C014,,C011,L012
+C015,S017,L013
+C016,S018,S019,C012
+C017,S020,L014
+C018,,C013
+C019,S022,L015
+C020,S023,,L016,C014
+
+
+  Trxs - 
+
+AccountID,TransactionID,Date,Amount,Type
+S001,T001,2023-01-10,1000,Deposit
+S001,T002,2023-01-12,-200,Withdrawal
+S002,T003,2023-02-15,500,Deposit
+C001,T004,2023-01-05,150,Payment
+C001,T005,2023-02-01,-50,Payment
+L001,T006,2023-01-20,-1000,Repayment
+L001,T007,2023-03-01,-500,Repayment
+S003,T008,2023-03-01,2000,Deposit
+L002,T009,2023-02-10,-500,Repayment
+S004,T010,2023-01-10,1000,Deposit
+S004,T011,2023-02-25,-200,Withdrawal
+C002,T012,2023-01-18,300,Payment
+C003,T013,2023-01-22,500,Payment
+L003,T014,2023-02-05,-800,Repayment
+L004,T015,2023-03-12,-300,Repayment
+S005,T016,2023-01-07,700,Deposit
+C004,T017,2023-02-02,-200,Payment
+L005,T018,2023-02-18,-1000,Repayment
+S006,T019,2023-03-01,1200,Deposit
+L006,T020,2023-02-15,-500,Repayment
+S007,T021,2023-01-12,400,Deposit
+S007,T022,2023-03-07,-150,Withdrawal
+S008,T023,2023-02-21,1000,Deposit
+C005,T024,2023-02-01,200,Payment
+S009,T025,2023-01-20,800,Deposit
+S009,T026,2023-02-13,-100,Withdrawal
+L007,T027,2023-03-05,-600,Repayment
+S010,T028,2023-01-10,2500,Deposit
+S010,T029,2023-03-03,-300,Withdrawal
+C006,T030,2023-02-15,600,Payment
+S011,T031,2023-01-05,1500,Deposit
+L008,T032,2023-03-01,-500,Repayment
+S012,T033,2023-02-11,1000,Deposit
+S013,T034,2023-02-15,-200,Withdrawal
+C007,T035,2023-01-17,400,Payment
+L009,T036,2023-03-12,-1000,Repayment
+S014,T037,2023-01-02,800,Deposit
+S015,T038,2023-02-08,-100,Withdrawal
+C008,T039,2023-01-30,300,Payment
+C009,T040,2023-02-10,150,Payment
+S016,T041,2023-03-01,1000,Deposit
+C010,T042,2023-02-20,500,Payment
+L010,T043,2023-03-15,-700,Repayment
+
+
+  LOcations - 
+
+ZipCode,City,Country
+10001,New York,USA
+90001,Los Angeles,USA
+94105,San Francisco,USA
+60601,Chicago,USA
+30301,Atlanta,USA
+75201,Dallas,USA
+33101,Miami,USA
+98101,Seattle,USA
+85001,Phoenix,USA
+48201,Detroit,USA
+
+
+  ====================
+
+
+
+
+Employee Data - 
+
+  E001, John, Doe, 1234567890, 8901234567, 101 Elm Street
+E002, Jane, Smith, 1234567891, 8901234568, 102 Oak Avenue
+E003, Alice, Johnson, , 8901234569, 103 Pine Lane
+E004, Bob, Brown, 1234567892, , 104 Maple Road
+E005, Eve, Taylor, , 8901234570, 105 Cedar Drive
+E006, Michael, Anderson, 1234567893, 8901234571, 106 Birch Boulevard
+E007, Sarah, Thomas, , 8901234572, 107 Spruce Path
+E008, James, Jackson, 1234567894, , 108 Willow Way
+E009, Emma, White, , 8901234573, 109 Aspen Terrace
+E010, Liam, Harris, 1234567895, 8901234574, 110 Redwood Court
+E011, Olivia, Martin, , 8901234575, 111 Cypress Plaza
+E012, Noah, Thompson, 1234567896, , 112 Sycamore Lane
+E013, Sophia, Garcia, 1234567897, 8901234576, 113 Poplar Park
+E014, Mason, Martinez, , 8901234577, 114 Dogwood Avenue
+E015, Isabella, Robinson, 1234567898, , 115 Magnolia Circle
+E016, Lucas, Clark, , 8901234578, 116 Beechwood Lane
+E017, Mia, Rodriguez, 1234567899, , 117 Chestnut Way
+E018, Ethan, Lewis, 1234567800, 8901234579, 118 Alder Boulevard
+E019, Charlotte, Lee, , 8901234580, 119 Hazel Drive
+E020, Logan, Walker, 1234567801, , 120 Hawthorn Court
+
+
+
+
+
+
+
+  Departms
+
+  DeptID,DeptName
+    D001, IT
+D002, HR
+D003, Finance
+D004, Operations
+
+  CompanyNames- 
+  TechCorp, InnovaSoft, SkyHigh Enterprises
+
+==============
+
+
+    Category	ID	Name	Price	Date Released
+TV	TV001	Samsung 32 inch Smart TV	299.99	2022-05-15
+TV002	LG OLED 55 inch TV	1299.99	2023-02-10
+TV003	Sony Bravia 50 inch TV	999.99	2023-03-20
+TV004	Panasonic 43 inch Smart TV	599.99	2022-08-01
+TV005	TCL 40 inch Full HD TV	349.99	2022-11-12
+TV006	Vizio 60 inch 4K TV	749.99	2023-01-05
+TV007	Sharp Aquos 50 inch TV	799.99	2023-06-25
+TV008	Philips 55 inch Smart TV	899.99	2023-04-30
+TV009	Hisense 65 inch TV	679.99	2022-09-14
+TV010	RCA 32 inch HD TV	199.99	2022-12-22
+TV011	Insignia 39 inch TV	249.99	2023-03-15
+TV012	Toshiba Fire TV 43 inch	429.99	2023-05-10
+Mobile	MO001	iPhone 14 Pro Max	1099.99	2022-09-16
+MO002	Samsung Galaxy S23 Ultra	1199.99	2023-02-01
+MO003	OnePlus Nord 3	399.99	2023-07-15
+MO004	Google Pixel 8	799.99	2023-10-04
+MO005	Xiaomi Mi 13	599.99	2023-03-10
+MO006	Oppo Reno 10 Pro	649.99	2023-06-18
+MO007	Vivo X80 Pro	699.99	2022-07-12
+MO008	Motorola Edge 40	499.99	2023-05-25
+MO009	Realme GT 3	449.99	2023-04-15
+MO010	Asus ROG Phone 7	999.99	2023-03-30
+MO011	Nokia XR20	549.99	2022-08-01
+MO012	Sony Xperia 1 IV	1299.99	2023-01-25
+Washing Machine	WM001	Whirlpool 7kg Fully Automatic	499.99	2023-01-20
+WM002	LG 8kg Front Load	749.99	2023-06-10
+WM003	Samsung 6.5kg Top Load	449.99	2022-11-30
+WM004	Bosch 7kg Front Load	699.99	2023-03-15
+WM005	IFB 6kg Front Load	599.99	2023-05-01
+WM006	Haier 6.2kg Semi-Automatic	349.99	2022-12-05
+WM007	Miele 9kg Premium Washer	1599.99	2023-07-20
+Laptop	LP001	Dell XPS 13	1299.99	2023-02-18
+LP002	MacBook Pro 16-inch	2399.99	2023-03-10
+Headphone	HP001	Sony WH-1000XM5	399.99	2023-01-15
+HP002	Bose QuietComfort 45	349.99	2022-10-10
+HP003	Apple AirPods Max	549.99	2023-04-20
+HP004	Sennheiser Momentum 4	399.99	2023-06-30
+HP005	Jabra Elite 85h	249.99	2023-03-01
+HP006	Beats Studio 3	299.99	2022-12-22
+HP007	Skullcandy Crusher ANC	199.99	2023-05-15
+HP008	Bowers & Wilkins PX7	399.99	2023-02-20
+HP009	Audio-Technica ATH-M50xBT	199.99	2022-07-12
+HP010	Philips PH805	249.99	2023-06-25
+HP011	AKG N700NC M2	299.99	2022-11-14
+HP012	JBL Live 660NC	229.99	2023-03-22
+Smartwatch	SW001	iWatch 15 Pro	799.99	2023-05-10
+SW002	Samsung Watch Z Fold 5	699.99	2023-02-20
+SW003	OnePlus Watch 12	249.99	2023-03-25
+SW004	Google Watch Fold	349.99	2023-07-01
+    
