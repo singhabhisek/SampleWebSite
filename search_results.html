@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<script type="text/javascript" src="https://js-cdn.dynatrace.com/jstag/16c6b3f0987/bf92443sol/686c33a62fbea5e4_complete.js" crossorigin="anonymous"></script>
     <title>Search Results</title>
     <style>
         body {
@@ -59,7 +60,7 @@
     <h1>Search Results</h1>
 
 
-    <form method="POST" action="/add_selected_to_cart">
+    <form method="POST" action="/add_selected_to_cart"  id="cartForm">
         <!-- Export to CSV Button -->
 
         <table>
@@ -87,6 +88,23 @@
     </form>
     <a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
 
+        <script>
+    document.getElementById('cartForm').addEventListener('submit', function (event) {
+    const rows = document.querySelectorAll('table tr');
+    rows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        const hiddenInput = row.querySelector('input[type="hidden"]');
+
+        if (checkbox && hiddenInput) {
+            if (checkbox.checked) {
+                hiddenInput.disabled = true; // Disable the hidden input if the checkbox is checked
+            } else {
+                checkbox.disabled = true; // Disable the checkbox if it's unchecked
+            }
+        }
+    });
+});
+</script>
      <script>
         function toggleSelectAll() {
             var selectAllCheckbox = document.getElementById('selectAll');
