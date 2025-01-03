@@ -5,6 +5,7 @@ import random
 import uuid
 import xmltodict
 import csv
+from io import StringIO
 
 from flask import Flask, request, jsonify, make_response
 from xml.etree.ElementTree import Element, tostring, fromstring, SubElement
@@ -1213,8 +1214,9 @@ def export_cart_csv():
         return redirect(url_for('cart'))
 
     # Create a CSV output
-    output = []
-    output.append(['Product ID', 'Product Name', 'Quantity', 'Price', 'Date_Released'])
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Product ID', 'Product Name', 'Quantity', 'Price', 'Date_Released'])
 
     truncated = False
     for i, (product_id, quantity) in enumerate(cart_items.items()):
@@ -1237,38 +1239,29 @@ def export_cart_csv():
             if product_name:
                 break
 
-        # Append the product details to the output
+        # Append the product details to the CSV
         if product_name:
-            output.append([product_id, product_name, quantity, price, date_released])
+            writer.writerow([product_id, product_name, quantity, price, date_released])
         else:
             flash(f"Product ID {product_id} not found in search results.")
             continue
 
-    # If truncated, include a message in the CSV but still return the CSV
+    # If truncated, include a message
     if truncated:
         flash("The export was truncated due to system limitations. Only partial results are included.")
+        writer.writerow(["NOTE", "Results were truncated due to system limitations."])
 
-        output.append(["NOTE", "Results were truncated due to system limitations. Only a partial export is available."])
+    # Save CSV data in the session for download
+    session['csv_data'] = output.getvalue()
+    print(output.getvalue())
+    output.close()
 
-    # Generate CSV response
-    def generate_csv():
-        csvfile = csv.StringIO()
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerows(output)
-        csvfile.seek(0)
-        yield csvfile.read()
+    flash("CSV export completed. Your download should start shortly.")
+    return redirect(url_for('cart'))
 
-    # Clear any flash messages before sending the response
-    session.pop('_flashes', None)  # This clears all flash messages
-    return Response(
-        generate_csv(),
-        content_type='text/csv',
-        headers={'Content-Disposition': 'attachment;filename=cart.csv'}
-    )
 
 @app.route('/cart')
 def cart():
-
     # Check if the user is logged in
     if 'session_id' not in session:
         flash('You need to log in first.')
@@ -1289,7 +1282,12 @@ def cart():
                         'quantity': quantity
                     })
 
-    return render_template('cart.html', cart=detailed_cart)
+    # Check if there's CSV data to download
+    csv_data = session.pop('csv_data', None)
+
+
+
+    return render_template('cart.html', cart=detailed_cart, csv_data=csv_data)
 
 @app.route('/logout')
 def logout():
