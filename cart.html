@@ -82,20 +82,54 @@
         }
     </script>
 
+
+    <script>
+        // Trigger CSV download if CSV data is available
+        function downloadCSV(csvContent) {
+            if (csvContent) {
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cart.csv';
+                document.body.appendChild(a);
+                a.click();
+                a.remove(); // Clean up the link
+            }
+        }
+
+           // Wait for DOM content to be loaded
+            document.addEventListener('DOMContentLoaded', () => {
+            // Use safe-encoded CSV data from Flask
+            const csvData = `{{ csv_data | safe }}`;
+
+            // Debugging: Log the raw data
+            console.log(csvData);
+
+            // If CSV data is available, trigger the download
+            if (csvData && csvData !== "None" && csvData.trim().length > 0) {
+                downloadCSV(csvData);
+            }
+        });
+    </script>
 </head>
 <body>
 <h1>Your Cart</h1>
 
 <div class="button-container">
+
     <form method="POST" action="/clear_cart">
         <button type="submit">Clear Cart</button>
     </form>
-    <form action="/export_cart_csv" method="GET" onsubmit="clearFlashMessages();">
+
+    <!-- Export Cart CSV -->
+    <form method="GET" action="/export_cart_csv">
         <button type="submit">Export Cart as CSV</button>
     </form>
 </div>
 
-<div id="flash-messages" class="flash-messages">
+<!-- Flash Messages -->
+<div id="flash-messages">
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     <ul>
@@ -106,8 +140,6 @@
     {% endif %}
     {% endwith %}
 </div>
-
-
 
 {% if cart %}
 <table>
