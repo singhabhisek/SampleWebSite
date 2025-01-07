@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+import json
+from datetime import datetime, timedelta, time
+from time import sleep
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
 import random
@@ -91,7 +93,9 @@ SEARCH_RESULTS = {
 
 
 
-# Static Employee List
+# ---------- Static Data ----------
+
+# Employee details
 EMPLOYEE_DATA = [
     {"employeeID": "E001", "firstName": "John", "lastName": "Doe", "homePhone": "1234567890", "officePhone": "8901234567", "address": "101 Elm Street"},
     {"employeeID": "E002", "firstName": "Jane", "lastName": "Smith", "homePhone": "1234567891", "officePhone": "8901234568", "address": "102 Oak Avenue"},
@@ -101,7 +105,7 @@ EMPLOYEE_DATA = [
     {"employeeID": "E006", "firstName": "Michael", "lastName": "Anderson", "homePhone": "1234567893", "officePhone": "8901234571", "address": "106 Birch Boulevard"},
     {"employeeID": "E007", "firstName": "Sarah", "lastName": "Thomas", "homePhone": None, "officePhone": "8901234572", "address": "107 Spruce Path"},
     {"employeeID": "E008", "firstName": "James", "lastName": "Jackson", "homePhone": "1234567894", "officePhone": None, "address": "108 Willow Way"},
-    {"employeeID": "E009", "firstName": "Emma", "lastName": "White", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
+    {"employeeID": "E009", "firstName": "John", "lastName": "Doe", "homePhone": None, "officePhone": "8901234573", "address": "109 Aspen Terrace"},
     {"employeeID": "E010", "firstName": "Liam", "lastName": "Harris", "homePhone": "1234567895", "officePhone": "8901234574", "address": "110 Redwood Court"},
     {"employeeID": "E011", "firstName": "Olivia", "lastName": "Martin", "homePhone": None, "officePhone": "8901234575", "address": "111 Cypress Plaza"},
     {"employeeID": "E012", "firstName": "Noah", "lastName": "Thompson", "homePhone": "1234567896", "officePhone": None, "address": "112 Sycamore Lane"},
@@ -115,7 +119,8 @@ EMPLOYEE_DATA = [
     {"employeeID": "E020", "firstName": "Logan", "lastName": "Walker", "homePhone": "1234567801", "officePhone": None, "address": "120 Hawthorn Court"},
 ]
 
-# Static Department List
+
+# Department details
 DEPARTMENTS = [
     {"departmentID": "D001", "departmentName": "IT"},
     {"departmentID": "D002", "departmentName": "HR"},
@@ -123,11 +128,14 @@ DEPARTMENTS = [
     {"departmentID": "D004", "departmentName": "Operations"}
 ]
 
+# Company details
 COMPANIES = [
-    "TechCorp", "InnovaSoft", "SkyHigh Enterprises"
+    {"companyID": "C001", "companyName": "TechCorp"},
+    {"companyID": "C002", "companyName": "InnovaSoft"},
+    {"companyID": "C003", "companyName": "SkyHigh Enterprises"}
 ]
 
-# Map each employee to a department and a company (cyclic assignment)
+# Map employees to departments and companies cyclically
 EMPLOYMENT_DETAILS = {}
 for i, employee in enumerate(EMPLOYEE_DATA):
     department = DEPARTMENTS[i % len(DEPARTMENTS)]
@@ -135,10 +143,10 @@ for i, employee in enumerate(EMPLOYEE_DATA):
     EMPLOYMENT_DETAILS[employee["employeeID"]] = {
         "departmentID": department["departmentID"],
         "departmentName": department["departmentName"],
-        "companyName": company
+        "companyID": company["companyID"],
     }
 
-# Static Account Data
+# Generate random accounts for each employee
 ACCOUNTS = {}
 for employee in EMPLOYEE_DATA:
     employee_id = employee["employeeID"]
@@ -149,142 +157,24 @@ for employee in EMPLOYEE_DATA:
         for _ in range(account_count)
     ]
 
+# Helper Function to Validate Headers
+def validate_headers():
+    if 'SOAPAction' not in request.headers or 'Authorization' not in request.headers:
+        return make_response("Forbidden: Missing required headers.", 403)
+    return None
 
+# Helper Function to Generate Business Exception XML
+def generate_business_exception(code, message):
+    root = Element('BusinessException')
+    code_elem = SubElement(root, 'Code')
+    code_elem.text = str(code)
+    message_elem = SubElement(root, 'Message')
+    message_elem.text = message
+    return make_response(tostring(root), 200, {'Content-Type': 'application/xml'})
 
-@app.route('/api/employee_info', methods=['POST'])
-def employee_info():
-    if 'SOAPAction' not in request.headers:
-        return make_response("Forbidden: Missing SOAPAction header.", 403)
-
-    if request.content_type != 'application/xml':
-        return make_response("Invalid content type. Please provide XML input.", 400)
-
-    xml_data = request.data
-    try:
-        input_data = fromstring(xml_data)
-        first_name = input_data.find('firstName').text
-        last_name = input_data.find('lastName').text
-
-        # Search for the employee
-        employee = next((emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name), None)
-        if not employee:
-            return make_response("Employee not found.", 404)
-
-        # Build XML response
-        root = Element('EmployeeDetails')
-
-        # Add employeeID
-        employee_id_element = Element('employeeID')
-        employee_id_data = [
-            {"type": "Current", "ID": employee["employeeID"]},
-            {"type": "Previous", "ID": employee["employeeID"] + 100}
-        ]
-        random.shuffle(employee_id_data)
-        for id_data in employee_id_data:
-            type_elem = SubElement(employee_id_element, 'type')
-            type_elem.text = id_data["type"]
-            id_elem = SubElement(employee_id_element, 'ID')
-            id_elem.text = str(id_data["ID"])
-        root.append(employee_id_element)
-
-        # Add phone numbers
-        phone_element = Element('Phone')
-        phone_data = [
-            {"type": "Home", "PhoneNumber": employee["homePhone"]},
-            {"type": "Office", "PhoneNumber": employee["officePhone"]}
-        ]
-        phone_data = [entry for entry in phone_data if entry["PhoneNumber"]]
-        random.shuffle(phone_data)
-        for phone in phone_data:
-            type_elem = SubElement(phone_element, 'type')
-            type_elem.text = phone["type"]
-            phone_number_elem = SubElement(phone_element, 'PhoneNumber')
-            phone_number_elem.text = phone["PhoneNumber"]
-        root.append(phone_element)
-
-        # Add accounts
-        account_element = Element('Accounts')
-        accounts = ACCOUNTS.get(employee["employeeID"], [])
-        for account in accounts:
-            account_type_elem = SubElement(account_element, 'type')
-            account_type_elem.text = account["type"]
-            account_number_elem = SubElement(account_element, 'accountNumber')
-            account_number_elem.text = account["accountNumber"]
-        root.append(account_element)
-
-        # Add remaining details
-        for key, value in employee.items():
-            if key not in ["employeeID", "homePhone", "officePhone"]:
-                child = SubElement(root, key)
-                child.text = str(value) if value else "N/A"
-
-        response = make_response(tostring(root), 200)
-        response.headers['Content-Type'] = 'application/xml'
-        return response
-
-    except Exception as e:
-        return make_response(f"Error processing request: {str(e)}", 500)
-
-
-@app.route('/api/employment_details', methods=['POST'])
-def employment_details():
-    if 'SOAPAction' not in request.headers:
-        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
-
-    request_data = request.get_json()
-    employee_id = request_data.get('employeeID')
-    if not employee_id:
-        return jsonify({"error": "Missing employeeID"}), 400
-
-    details = EMPLOYMENT_DETAILS.get(employee_id)
-    if not details:
-        return jsonify({"error": "Employee ID not found"}), 404
-
-    return jsonify(details), 200
-
-
-@app.route('/api/employee_list', methods=['GET'])
-def employee_list():
-    if 'SOAPAction' not in request.headers:
-        return make_response(jsonify({"error": "Forbidden: Missing SOAPAction header."}), 403)
-
-    query_type = request.args.get('type', 'ALL').upper()
-
-    if query_type == 'ALL':
-
-        # Reshuffle the employee data
-        random.shuffle(EMPLOYEE_DATA)
-
-        employees = [
-            {"employeeID": emp["employeeID"], "firstName": emp["firstName"], "lastName": emp["lastName"],
-             "department": EMPLOYMENT_DETAILS[emp["employeeID"]]["departmentName"]}
-            for emp in EMPLOYEE_DATA
-        ]
-        return jsonify({"employees": employees}), 200
-    elif query_type == 'SINGLE':
-        employee_id = request.args.get('employeeID')
-        if not employee_id:
-            return jsonify({"error": "Missing employeeID query parameter"}), 400
-
-        employee_id = int(employee_id)
-        employee = next((emp for emp in EMPLOYEE_DATA if emp["employeeID"] == employee_id), None)
-        if not employee:
-            return jsonify({"error": "Employee ID not found"}), 404
-
-
-        return jsonify({
-            "employeeID": employee["employeeID"],
-            "firstName": employee["firstName"],
-            "lastName": employee["lastName"],
-            "department": EMPLOYMENT_DETAILS[employee_id]["departmentName"]
-        }), 200
-
-    return jsonify({"error": "Invalid type parameter. Use 'ALL' or 'SINGLE'."}), 400
-
-
-# API to get employee and department details
-@app.route('/api/employee_details', methods=['GET'])
-def get_employee_details():
+# API Endpoints
+@app.route('/api/employees/departments/details', methods=['GET'])
+def get_employee_department_details():
     employee_details = []
 
     for employee in EMPLOYEE_DATA:
@@ -296,10 +186,205 @@ def get_employee_details():
                 "employeeID": employee_id,
                 "departmentID": department["departmentID"],
                 "employeeName": f"{employee['firstName']} {employee['lastName']}",
-                "departmentName": department["departmentName"]
+                # "departmentName": department["departmentName"],
+                "companyID": department["companyID"]
             })
 
     return jsonify(employee_details), 200
+
+@app.route('/api/employees/summary', methods=['GET'])
+def get_employee_details():
+    error = validate_headers()
+    if error:
+        return error
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+        return jsonify(EMPLOYEE_DATA), 200
+
+    elif query_type == 'SINGLE':
+        employee_id = request.args.get('employeeID')
+        if not employee_id:
+            return generate_business_exception("BE001", "Missing employeeID query parameter")
+
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["employeeID"] == employee_id), None)
+        if not employee:
+            return generate_business_exception("BE002", "Employee not found")
+
+        return jsonify(employee), 200
+
+    return generate_business_exception("BE003", "Invalid type parameter. Use 'ALL' or 'SINGLE'")
+
+@app.route('/api/departments/details', methods=['GET'])
+def get_department_details():
+    error = validate_headers()
+    if error:
+        return error
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+        return jsonify(DEPARTMENTS), 200
+
+    elif query_type == 'SINGLE':
+        department_id = request.args.get('departmentID')
+        if not department_id:
+            return generate_business_exception("BE004", "Missing departmentID query parameter")
+
+        department = next((dept for dept in DEPARTMENTS if dept["departmentID"] == department_id), None)
+        if not department:
+            return generate_business_exception("BE005", "Department not found")
+
+        return jsonify(department), 200
+
+    return generate_business_exception("BE006", "Invalid type parameter. Use 'ALL' or 'SINGLE'")
+
+@app.route('/api/companies/details', methods=['GET'])
+def get_company_details():
+    error = validate_headers()
+    if error:
+        return error
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+        return jsonify(COMPANIES), 200
+
+    elif query_type == 'SINGLE':
+        company_id = request.args.get('companyID')
+        if not company_id:
+            return generate_business_exception("BE007", "Missing companyID query parameter")
+
+        company = next((comp for comp in COMPANIES if comp["companyID"] == company_id), None)
+        if not company:
+            return generate_business_exception("BE008", "Company not found")
+
+        return jsonify(company), 200
+
+    return generate_business_exception("BE009", "Invalid type parameter. Use 'ALL' or 'SINGLE'")
+
+@app.route('/api/employees/with-department', methods=['GET'])
+def get_employee_list_with_department():
+    error = validate_headers()
+    if error:
+        return error
+
+    query_type = request.args.get('type', 'ALL').upper()
+
+    if query_type == 'ALL':
+        employees = [
+            {
+                "employeeID": emp["employeeID"],
+                "firstName": emp["firstName"],
+                "lastName": emp["lastName"],
+                "departmentID": EMPLOYMENT_DETAILS[emp["employeeID"]]["departmentID"],
+                "companyID": EMPLOYMENT_DETAILS[emp["employeeID"]]["companyID"]
+            }
+            for emp in EMPLOYEE_DATA
+        ]
+        return jsonify({"employees": employees}), 200
+
+    elif query_type == 'SINGLE':
+        employee_id = request.args.get('employeeID')
+        if not employee_id:
+            return generate_business_exception("BE010", "Missing employeeID query parameter")
+
+        employee = next((emp for emp in EMPLOYEE_DATA if emp["employeeID"] == employee_id), None)
+        if not employee:
+            return generate_business_exception("BE011", "Employee not found")
+
+        details = EMPLOYMENT_DETAILS.get(employee_id)
+        return jsonify({
+            "employeeID": employee["employeeID"],
+            "firstName": employee["firstName"],
+            "lastName": employee["lastName"],
+            "departmentID": details["departmentID"],
+            "companyID": details["companyID"]
+        }), 200
+
+    return generate_business_exception("BE012", "Invalid type parameter. Use 'ALL' or 'SINGLE'")
+
+@app.route('/api/employees/full-details', methods=['POST'])
+def employee_info():
+    if 'SOAPAction' not in request.headers:
+        return make_response("Forbidden: Missing SOAPAction header.", 403)
+
+    if request.content_type != 'application/xml':
+        return generate_business_exception("BE013", "Invalid content type. Please provide XML input.")
+
+    xml_data = request.data
+    try:
+        input_data = fromstring(xml_data)
+        first_name = input_data.find('firstName').text
+        last_name = input_data.find('lastName').text
+
+        # Search for all employees with the same first and last name
+        matching_employees = [emp for emp in EMPLOYEE_DATA if emp["firstName"] == first_name and emp["lastName"] == last_name]
+        if not matching_employees:
+            return generate_business_exception("BE014", "Employee not found")
+
+        # Build XML response
+        root = Element('EmployeeDetails')
+
+        # Loop over each matching employee and add their details to the response
+        for employee in matching_employees:
+            employee_element = SubElement(root, 'Employee')
+
+            # Add employeeID
+            employee_id_element = Element('employeeID')
+            employee_id_data = [
+                {"type": "Current", "ID": employee["employeeID"]},
+                {"type": "Previous", "ID": employee["employeeID"] + "100"}
+            ]
+            random.shuffle(employee_id_data)
+            for id_data in employee_id_data:
+                type_elem = SubElement(employee_id_element, 'type')
+                type_elem.text = id_data["type"]
+                id_elem = SubElement(employee_id_element, 'ID')
+                id_elem.text = str(id_data["ID"])
+            employee_element.append(employee_id_element)
+
+            # Add phone numbers
+            phone_element = Element('Phone')
+            phone_data = [
+                {"type": "Home", "PhoneNumber": employee["homePhone"]},
+                {"type": "Office", "PhoneNumber": employee["officePhone"]}
+            ]
+            phone_data = [entry for entry in phone_data if entry["PhoneNumber"]]
+            random.shuffle(phone_data)
+            for phone in phone_data:
+                type_elem = SubElement(phone_element, 'type')
+                type_elem.text = phone["type"]
+                phone_number_elem = SubElement(phone_element, 'PhoneNumber')
+                phone_number_elem.text = phone["PhoneNumber"]
+            employee_element.append(phone_element)
+
+            # Add accounts
+            account_element = Element('Accounts')
+            accounts = ACCOUNTS.get(employee["employeeID"], [])
+            for account in accounts:
+                account_type_elem = SubElement(account_element, 'type')
+                account_type_elem.text = account["type"]
+                account_number_elem = SubElement(account_element, 'accountNumber')
+                account_number_elem.text = account["accountNumber"]
+            employee_element.append(account_element)
+
+            # Add remaining details
+            for key, value in employee.items():
+                if key not in ["employeeID", "homePhone", "officePhone"]:
+                    child = SubElement(employee_element, key)
+                    child.text = str(value) if value else "N/A"
+
+        response = make_response(tostring(root), 200)
+        response.headers['Content-Type'] = 'application/xml'
+        return response
+
+    except Exception as e:
+        return generate_business_exception("BE015", f"Error processing request: {str(e)}")
+
+
+
 
 ##======================================================BANKING==============
 
@@ -856,7 +941,8 @@ USERS = {
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
+    # Introduce a delay to simulate latency
+    sleep(1)  # 2 seconds delay
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
@@ -890,6 +976,8 @@ def login():
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
+    # Introduce a delay to simulate latency
+    sleep(2)  # 2 seconds delay
     # Check if the user is logged in
     if 'session_id' not in session or 'username' not in session:
         flash('You need to log in first.')
@@ -971,6 +1059,8 @@ def search():
 
 @app.route('/search_results', methods=['GET', 'POST'])
 def search_results():
+    # Introduce a delay to simulate latency
+    sleep(2)  # 2 seconds delay
     # Check if the user is logged in (session ID validation)
     if 'session_id' not in session:
         flash('You need to log in first.')
@@ -981,16 +1071,43 @@ def search_results():
         flash('Please perform a search first.')
         return redirect(url_for('search'))
 
-    # Retrieve the search_token sent in the form
-    form_token = request.form.get('search_token')
+
 
     # Retrieve the stored search_token from the session
     stored_token = session.get('search_token')
+
+    # Retrieve the search_token sent in the form
+    form_token = request.form.get('search_token')
 
     # Verify if the search_token matches
     if not form_token or form_token != stored_token:
         flash("Session mismatch or invalid token. Please try again.")
         return redirect(url_for('search'))  # Redirect to search page in case of mismatch
+
+    # Retrieve the response_data from the form
+    # response_data = request.form.get('search_token')
+    # print(response_data)
+    #
+    # if not response_data:
+    #     flash("Invalid request: Missing token data.")
+    #     return redirect(url_for('search'))  # Redirect to search page
+    #
+    # try:
+    #     # Parse the JSON data from the hidden input
+    #     parsed_data = json.loads(response_data)
+    #
+    #     # Extract the search token from the parsed data
+    #     form_token = parsed_data.get('data', {}).get('search', {}).get('session', {}).get('token')
+    #     stored_token = session.get('search_token')  # Retrieve the stored token from the session
+    #
+    #     # Compare tokens
+    #     if not form_token or form_token != stored_token:
+    #         flash("Session mismatch or invalid token. Please try again.")
+    #         return redirect(url_for('search'))  # Redirect to search page in case of mismatch
+    #
+    # except (json.JSONDecodeError, KeyError) as e:
+    #     flash("Invalid Search Token. Please try again.")
+    #     return redirect(url_for('search'))
 
     category = request.form.get('category')
     query = request.form.get('query').lower() if request.form.get('query') else None
@@ -1007,12 +1124,14 @@ def search_results():
 
     random.shuffle(results)  # Randomize results
     session['search_results'] = results  # Save results to the session for later validation
-
-    return render_template('search_results.html', results=results)
+    print(category)
+    return render_template('search_results.html', results=results, category=category)
 
 
 @app.route('/add_to_cart', methods=['POST'])
 def add_to_cart():
+    # Introduce a delay to simulate latency
+    sleep(3)  # 2 seconds delay
     if 'session_id' not in session:
         flash('You need to login first.')
         return redirect(url_for('login'))
@@ -1037,13 +1156,36 @@ def clear_cart():
 
 @app.route('/add_selected_to_cart', methods=['POST'])
 def add_selected_to_cart():
+    # Introduce a delay to simulate latency
+    sleep(2)  # 2 seconds delay
     # Ensure the user is logged in
     if 'session_id' not in session:
         flash('You need to log in first.')
         return redirect(url_for('login'))
 
+    print("Form Data Sent:", request.form)  # Debugging: print the form data
+
+    # Retrieve category and form data
+    category = request.form.get('category')
+
+    if not category or category not in SEARCH_RESULTS:
+        flash('Invalid category or category not provided.')
+        return redirect(url_for('cart'))
+
+    # Retrieve all product IDs for the category
+    expected_product_ids = {item['id'] for item in SEARCH_RESULTS[category]}
+
+    # Extract product IDs from the request
+    received_product_ids = set(request.form.keys()) - {'category'}
+
+    # Validate all checkboxes were sent
+    if received_product_ids != expected_product_ids:
+        flash('Some products are missing in the request. Please try again.')
+        return redirect(url_for('cart'))
+
     # Retrieve form data
     cart_items = session.get('cart', {})
+
 
     # Loop through the form data to process each product ID
     for product_id, value in request.form.items():
