@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script type="text/javascript" src="https://js-cdn.dynatrace.com/jstag/16c6b3f0987/bf92443sol/686c33a62fbea5e4_complete.js" crossorigin="anonymous"></script>
+    
     <title>Search Results</title>
     <style>
         body {
@@ -54,41 +54,45 @@
         a:hover {
             color: #1abc9c;
         }
+
     </style>
 </head>
 <body>
-    <h1>Search Results</h1>
+<h1>Search Results</h1>
 
 
-    <form method="POST" action="/add_selected_to_cart"  id="cartForm">
-        <!-- Export to CSV Button -->
+<form action="/add_selected_to_cart" id="cartForm" method="POST">
+    <!-- Export to CSV Button -->
+    <input type="hidden" id="category" name="category" value="{{category}}"/>
+    <table>
+        <tr>
+            <th><input id="selectAll" onclick="toggleSelectAll()" type="checkbox"> Select All</th>
+            <th>Product ID</th>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>Date Released</th>
+        </tr>
+        {% for item in results %}
+        <tr>
+            <td>
 
-        <table>
-            <tr>
-                <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"> Select All</th>
-                <th>Product ID</th>
-                <th>Product Name</th>
-                <th>Price</th>
-                <th>Date Released</th>
-            </tr>
-            {% for item in results %}
-            <tr>
-                <td>
-                    <input type="checkbox" name="{{ item['id'] }}" value="true">
-                    <input type="hidden" name="{{ item.id }}" value="false"> <!-- Ensures false is passed for unchecked items -->
-                </td>
-                <td>{{ item['id'] }}</td>
-                <td>{{ item['name'] }}</td>
-                <td>{{ item['price'] }}</td>
-                <td>{{ item['date_released'] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        <button type="submit">Add Selected to Cart</button>
-    </form>
-    <a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
 
-        <script>
+                <input name="{{ item['id'] }}" type="checkbox" value="true">
+                <input name="{{ item.id }}" type="hidden" value="false">
+                <!-- Ensures false is passed for unchecked items -->
+            </td>
+            <td>{{ item['id'] }}</td>
+            <td>{{ item['name'] }}</td>
+            <td>{{ item['price'] }}</td>
+            <td>{{ item['date_released'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <button type="submit">Add Selected to Cart</button>
+</form>
+<a href="/cart">Go to Cart</a> | <a href="/logout">Logout</a>
+
+<script>
     document.getElementById('cartForm').addEventListener('submit', function (event) {
     const rows = document.querySelectorAll('table tr');
     rows.forEach(row => {
@@ -104,8 +108,9 @@
         }
     });
 });
+
 </script>
-     <script>
+<script>
         function toggleSelectAll() {
             var selectAllCheckbox = document.getElementById('selectAll');
             var checkboxes = document.querySelectorAll('input[type="checkbox"]:not(#selectAll)');
@@ -113,6 +118,7 @@
                 checkbox.checked = selectAllCheckbox.checked;
             });
         }
-    </script>
+
+</script>
 </body>
 </html>
