@@ -1,0 +1,72 @@
+Postman Requests Using localhost:5000
+1. Get Employee Department Details
+Request Type: GET
+URL:
+http://localhost:5000/api/employees/departments/details
+2. Get Employee Summary
+Request Type: GET
+
+URL:
+http://localhost:5000/api/employees/summary?type=ALL
+or
+http://localhost:5000/api/employees/summary?type=SINGLE&employeeID=E001
+
+Headers:
+
+Authorization: Bearer <token>
+SOAPAction: getDetails
+3. Get Department Details
+Request Type: GET
+
+URL:
+http://localhost:5000/api/departments/details?type=ALL
+or
+http://localhost:5000/api/departments/details?type=SINGLE&departmentID=D01
+
+Headers:
+
+Authorization: Bearer <token>
+SOAPAction: getDetails
+4. Get Company Details
+Request Type: GET
+
+URL:
+http://localhost:5000/api/companies/details?type=ALL
+or
+http://localhost:5000/api/companies/details?type=SINGLE&companyID=C001
+
+Headers:
+
+Authorization: Bearer <token>
+SOAPAction: getDetails
+5. Get Employees with Departments
+Request Type: GET
+
+URL:
+http://localhost:5000/api/employees/with-department?type=ALL
+or
+http://localhost:5000/api/employees/with-department?type=SINGLE&employeeID=E001
+
+Headers:
+
+Authorization: Bearer <token>
+SOAPAction: getDetails
+6. Get Full Employee Details (XML)
+Request Type: POST
+
+URL:
+http://localhost:5000/api/employees/full-details
+
+Headers:
+
+Authorization: Bearer <token>
+SOAPAction: getDetails
+Content-Type: application/xml
+Body (raw XML):
+
+xml
+Copy code
+<EmployeeRequest>
+    <firstName>John</firstName>
+    <lastName>Doe</lastName>
+</EmployeeRequest>
