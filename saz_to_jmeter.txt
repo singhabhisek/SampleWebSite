@@ -1,4 +1,422 @@
 import os
+import sys
+import zipfile
+import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
+
+# Configuration
+ALLOWED_STATUS_CODES = ["200", "302"]
+SKIP_FILE_TYPES = ['.jpg', '.jpeg', '.png', '.gif', '.css', '.js', '.woff', '.ttf', '.ico']
+
+def extract_sessions(saz_file, allowed_hosts):
+    sessions = {}
+    with zipfile.ZipFile(saz_file, 'r') as zipf:
+        for info in zipf.infolist():
+            if not info.filename.endswith('_c.txt'):
+                continue
+            session_id = info.filename.split('_')[0]
+            with zipf.open(info.filename) as f:
+                try:
+                    raw = f.read().decode('utf-8')
+                except:
+                    continue
+                # Skip unwanted file types
+                if any(ext in raw.lower() for ext in SKIP_FILE_TYPES):
+                    continue
+                host_line = next((line for line in raw.splitlines() if line.lower().startswith('host:')), None)
+                if not host_line:
+                    continue
+                host = host_line.split(':', 1)[1].strip()
+                if allowed_hosts and host not in allowed_hosts:
+                    continue
+                sessions[session_id] = {'raw': raw, 'host': host}
+
+        # Add comments and status codes
+        for info in zipf.infolist():
+            sid = info.filename.split('_')[0]
+            if sid not in sessions:
+                continue
+            if info.filename.endswith('_m.xml'):
+                with zipf.open(info.filename) as f:
+                    xml = ET.parse(f).getroot()
+                    comment = xml.find(".//SessionFlag[@N='ui-comments']")
+                    sessions[sid]['comment'] = comment.attrib['V'] if comment is not None else ''
+            if info.filename.endswith('_s.txt'):
+                with zipf.open(info.filename) as f:
+                    line = f.readline().decode()
+                    if line.startswith("HTTP/"):
+                        sessions[sid]['status'] = line.split(' ')[1]
+
+    return sessions
+
+def build_jmx(sessions, saz_file):
+    root = ET.Element("jmeterTestPlan", version="1.2", properties="5.0", jmeter="5.5")
+    ht1 = ET.SubElement(root, "hashTree")
+
+    testplan = ET.SubElement(ht1, "TestPlan", testclass="TestPlan", guiclass="TestPlanGui", testname="Test Plan", enabled="true")
+    ET.SubElement(testplan, "stringProp", name="TestPlan.comments")
+    ET.SubElement(testplan, "boolProp", name="TestPlan.functional_mode").text = "false"
+    ET.SubElement(testplan, "boolProp", name="TestPlan.tearDown_on_shutdown").text = "true"
+    ET.SubElement(testplan, "boolProp", name="TestPlan.serialize_threadgroups").text = "false"
+    udv = ET.SubElement(testplan, "elementProp", name="TestPlan.user_defined_variables", elementType="Arguments")
+    ET.SubElement(udv, "collectionProp", name="Arguments.arguments")
+    ET.SubElement(testplan, "stringProp", name="TestPlan.user_define_classpath")
+    ht2 = ET.SubElement(ht1, "hashTree")
+
+    tg = ET.SubElement(ht2, "ThreadGroup", testclass="ThreadGroup", guiclass="ThreadGroupGui", testname="Thread Group", enabled="true")
+    ET.SubElement(tg, "stringProp", name="ThreadGroup.on_sample_error").text = "continue"
+    loop = ET.SubElement(tg, "elementProp", name="ThreadGroup.main_controller", elementType="LoopController")
+    ET.SubElement(loop, "boolProp", name="LoopController.continue_forever").text = "false"
+    ET.SubElement(loop, "stringProp", name="LoopController.loops").text = "1"
+    ET.SubElement(tg, "stringProp", name="ThreadGroup.num_threads").text = "1"
+    ET.SubElement(tg, "stringProp", name="ThreadGroup.ramp_time").text = "1"
+    ET.SubElement(tg, "boolProp", name="ThreadGroup.scheduler").text = "false"
+    ET.SubElement(tg, "boolProp", name="ThreadGroup.same_user_on_next_iteration").text = "true"
+    ht3 = ET.SubElement(ht2, "hashTree")
+
+    last_comment = None
+    transaction_hash_tree = None
+    unique_hosts = set()
+
+    for sid, data in sessions.items():
+        status = data.get('status')
+        if status and status not in ALLOWED_STATUS_CODES:
+            continue
+
+        raw = data['raw']
+        lines = raw.splitlines()
+        request_line = lines[0]
+        method, url = request_line.split(' ')[:2]
+        headers = {}
+        body = ''
+        reading_body = False
+        for line in lines[1:]:
+            if line.strip() == "":
+                reading_body = True
+                continue
+            if reading_body:
+                body += line + '\n'
+            elif ':' in line:
+                k, v = line.split(':', 1)
+                headers[k.strip()] = v.strip()
+
+        parsed_url = urlparse(url)
+        protocol = parsed_url.scheme or ("https" if ":443" in headers.get("Host", "") else "http")
+        host = parsed_url.netloc or data['host']
+        path = parsed_url.path or "/"
+        port = parsed_url.port or ("443" if protocol == "https" else "80")
+
+        unique_hosts.add(host)
+
+        comment = data.get('comment', '').strip()
+        if comment != last_comment:
+            tc = ET.SubElement(ht3, "TransactionController", testclass="TransactionController", guiclass="TransactionControllerGui", testname=comment or "Transaction", enabled="true")
+            ET.SubElement(tc, "boolProp", name="TransactionController.includeTimers").text = "false"
+            ET.SubElement(tc, "boolProp", name="TransactionController.parent").text = "false"
+            transaction_hash_tree = ET.SubElement(ht3, "hashTree")
+            last_comment = comment
+
+        # HTTP Sampler
+        sampler = ET.SubElement(transaction_hash_tree, "HTTPSamplerProxy", testclass="HTTPSamplerProxy", guiclass="HttpTestSampleGui", testname=f"{method} {path}", enabled="true")
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.domain").text = host
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.port").text = str(port)
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.protocol").text = protocol
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.path").text = path
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.method").text = method
+        ET.SubElement(sampler, "boolProp", name="HTTPSampler.follow_redirects").text = "true"
+        ET.SubElement(sampler, "boolProp", name="HTTPSampler.auto_redirects").text = "false"
+        ET.SubElement(sampler, "boolProp", name="HTTPSampler.use_keepalive").text = "true"
+        ET.SubElement(sampler, "boolProp", name="HTTPSampler.DO_MULTIPART_POST").text = "false"
+        ET.SubElement(sampler, "boolProp", name="HTTPSampler.monitor").text = "false"
+        ET.SubElement(sampler, "stringProp", name="HTTPSampler.embedded_url_re").text = ""
+
+        # POST Body
+        if method.upper() == "POST":
+            ET.SubElement(sampler, "boolProp", name="HTTPSampler.postBodyRaw").text = "true"
+            args = ET.SubElement(sampler, "elementProp", name="HTTPsampler.Arguments", elementType="Arguments")
+            collection = ET.SubElement(args, "collectionProp", name="Arguments.arguments")
+            arg = ET.SubElement(collection, "elementProp", name="", elementType="HTTPArgument")
+            ET.SubElement(arg, "boolProp", name="HTTPArgument.always_encode").text = "false"
+            ET.SubElement(arg, "stringProp", name="Argument.value").text = body.strip()
+            ET.SubElement(arg, "stringProp", name="Argument.metadata").text = "="
+        else:
+            ET.SubElement(sampler, "elementProp", name="HTTPsampler.Arguments", elementType="Arguments")
+        ET.SubElement(transaction_hash_tree, "hashTree")
+
+        # Header Manager
+        headers_node = ET.SubElement(transaction_hash_tree, "HeaderManager", testclass="HeaderManager", guiclass="HeaderPanel", testname="Headers", enabled="true")
+        headers_collection = ET.SubElement(headers_node, "collectionProp", name="HeaderManager.headers")
+        for k, v in headers.items():
+            h = ET.SubElement(headers_collection, "elementProp", name="", elementType="Header")
+            ET.SubElement(h, "stringProp", name="Header.name").text = k
+            ET.SubElement(h, "stringProp", name="Header.value").text = v
+        ET.SubElement(transaction_hash_tree, "hashTree")
+
+    jmx_path = saz_file.replace('.saz', '.jmx')
+    ET.ElementTree(root).write(jmx_path, encoding="utf-8", xml_declaration=True)
+    print(f"\n✅ Saved JMX to {jmx_path}")
+    print("🌐 Unique Hosts Found:", ", ".join(sorted(unique_hosts)))
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <file.saz> [host1 host2 ...]")
+        sys.exit(1)
+
+    saz_file = sys.argv[1]
+    hosts = sys.argv[2:]  # Optional list of hosts to filter
+    sessions = extract_sessions(saz_file, hosts)
+    build_jmx(sessions, saz_file)
+================
+
+
+Here’s the updated portion of the code that goes inside the generate_jmeter_test_plan() function, right after creating each HTTPSamplerProxy:
+
+python
+Copy
+Edit
+# Add HeaderManager with parsed headers
+header_manager = ET.SubElement(hash_tree_for_transaction, 'HeaderManager', guiclass="HeaderPanel", testclass="HeaderManager", testname="HTTP Header Manager", enabled="true")
+header_collection = ET.SubElement(header_manager, 'collectionProp', name="HeaderManager.headers")
+
+for key, value in headers.items():
+    header_element = ET.SubElement(header_collection, 'elementProp', name="", elementType="Header")
+    ET.SubElement(header_element, 'stringProp', name="Header.name").text = key
+    ET.SubElement(header_element, 'stringProp', name="Header.value").text = value
+
+# Add a hashTree for the HeaderManager
+ET.SubElement(hash_tree_for_transaction, 'hashTree')
+
+===================
+
+
+import os
+import xml.etree.ElementTree as ET
+import zipfile
+from urllib.parse import urlparse
+import sys
+
+def extract_sessions_from_saz(saz_file_path, allowed_hosts, skip_file_types):
+    sessions = {}
+
+    try:
+        with zipfile.ZipFile(saz_file_path, 'r') as saz_file:
+            for file_info in saz_file.infolist():
+                if file_info.filename.endswith('_c.txt'):
+                    session_id = file_info.filename.replace('_c.txt', '')
+                    try:
+                        with saz_file.open(file_info) as file:
+                            session_data = file.read().decode('utf-8')
+
+                            if any(ext in session_data.lower() for ext in skip_file_types):
+                                print(f"Skipping session {session_id} due to file type.")
+                                continue
+
+                            # Extract Host header
+                            lines = session_data.split('\n')
+                            host_line = next((line for line in lines if line.lower().startswith('host:')), None)
+                            if not host_line:
+                                print(f"Skipping session {session_id} due to missing Host header.")
+                                continue
+
+                            host = host_line.split(':', 1)[1].strip()
+
+                            # Check if host is allowed (if filtering is used)
+                            if allowed_hosts and host not in allowed_hosts:
+                                print(f"Skipping session {session_id} due to unallowed host.")
+                                continue
+
+                            sessions[session_id] = {'data': session_data, 'comment': '', 'status_code': None}
+                    except UnicodeDecodeError:
+                        print(f"Error decoding session {session_id}. Skipping.")
+                        continue
+
+                elif file_info.filename.endswith('_m.xml') or file_info.filename.endswith('_s.txt'):
+                    session_id = file_info.filename.replace('_m.xml', '').replace('_s.txt', '')
+                    if session_id not in sessions:
+                        continue
+
+                    if file_info.filename.endswith('_m.xml'):
+                        with saz_file.open(file_info) as file:
+                            xml_data = file.read().decode('utf-8')
+                            root = ET.fromstring(xml_data)
+                            ui_comment_element = root.find(".//SessionFlag[@N='ui-comments']")
+                            ui_comment = ui_comment_element.get('V') if ui_comment_element is not None else ''
+                            sessions[session_id]['comment'] = ui_comment
+
+                    elif file_info.filename.endswith('_s.txt'):
+                        with saz_file.open(file_info, 'r') as file:
+                            lines = file.readlines()
+                            status_line = lines[0].decode('utf-8').strip()
+                            status_code = status_line.split(' ')[1]
+                            sessions[session_id]['status_code'] = status_code
+
+    except Exception as e:
+        print(f"Error extracting sessions from SAZ file: {e}")
+
+    return sessions
+
+
+def parse_fiddler_session(session_data):
+    try:
+        lines = session_data['data'].strip().split('\r\n')
+        request_line_parts = lines[0].split(' ')
+        request_method = request_line_parts[0]
+        url = request_line_parts[1]
+        headers = {}
+        body_start = False
+        body = ''
+        comment = session_data['comment']
+        status_code = session_data.get('status_code', None)
+
+        for line in lines[1:]:
+            if line.strip() == '':
+                body_start = True
+                continue
+            if body_start:
+                body += line + '\n'
+            else:
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    headers[key.strip()] = value.strip()
+
+        return request_method, url, headers, body.strip(), comment, status_code
+    except Exception as e:
+        print(f"Error parsing fiddler session: {e}")
+        return None, None, None, None, None, None
+
+
+def parse_url(url):
+    try:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc.split(':')[0]
+        path = parsed_url.path or "/"
+        return domain, path
+    except Exception as e:
+        print(f"Error parsing URL: {e}")
+        return None, None
+
+
+def generate_jmeter_test_plan(sessions, allowed_status_codes, saz_file_path):
+    try:
+        test_plan = ET.Element('jmeterTestPlan', version="1.2", properties="5.0", jmeter="5.5")
+        hash_tree_main = ET.SubElement(test_plan, 'hashTree')
+
+        # Test Plan config
+        test_plan_elem = ET.SubElement(hash_tree_main, 'TestPlan', guiclass="TestPlanGui", testclass="TestPlan", testname="Test Plan", enabled="true")
+        ET.SubElement(test_plan_elem, 'stringProp', name="TestPlan.comments")
+        ET.SubElement(test_plan_elem, 'boolProp', name="TestPlan.functional_mode").text = "false"
+        ET.SubElement(test_plan_elem, 'boolProp', name="TestPlan.tearDown_on_shutdown").text = "true"
+        ET.SubElement(test_plan_elem, 'boolProp', name="TestPlan.serialize_threadgroups").text = "false"
+        user_vars = ET.SubElement(test_plan_elem, 'elementProp', name="TestPlan.user_defined_variables", elementType="Arguments")
+        ET.SubElement(user_vars, 'collectionProp', name="Arguments.arguments")
+        ET.SubElement(test_plan_elem, 'stringProp', name="TestPlan.user_define_classpath")
+        hash_tree_after_test_plan = ET.SubElement(hash_tree_main, 'hashTree')
+
+        # Thread Group
+        thread_group = ET.SubElement(hash_tree_after_test_plan, 'ThreadGroup', guiclass="ThreadGroupGui", testclass="ThreadGroup", testname="Thread Group", enabled="true")
+        ET.SubElement(thread_group, 'stringProp', name="ThreadGroup.on_sample_error").text = "continue"
+        loop_controller = ET.SubElement(thread_group, 'elementProp', name="ThreadGroup.main_controller", elementType="LoopController")
+        ET.SubElement(loop_controller, 'boolProp', name="LoopController.continue_forever").text = "false"
+        ET.SubElement(loop_controller, 'stringProp', name="LoopController.loops").text = "1"
+        ET.SubElement(thread_group, 'stringProp', name="ThreadGroup.num_threads").text = "1"
+        ET.SubElement(thread_group, 'stringProp', name="ThreadGroup.ramp_time").text = "1"
+        ET.SubElement(thread_group, 'boolProp', name="ThreadGroup.scheduler").text = "false"
+        ET.SubElement(thread_group, 'boolProp', name="ThreadGroup.same_user_on_next_iteration").text = "true"
+        hash_tree_for_samplers = ET.SubElement(hash_tree_after_test_plan, 'hashTree')
+
+        current_transaction_controller = None
+        last_comment = None
+        unique_hosts = set()
+
+        for session_id, session_data in sessions.items():
+            request_method, url, headers, body, comment, status_code = parse_fiddler_session(session_data)
+            domain, path = parse_url(url)
+
+            if not url or not domain:
+                continue
+
+            # Filter by status code if provided
+            if allowed_status_codes and status_code not in allowed_status_codes:
+                continue
+
+            unique_hosts.add(domain)
+
+            # Start a new TransactionController for each new comment block
+            if comment != last_comment:
+                current_transaction_controller = ET.SubElement(hash_tree_for_samplers, 'TransactionController',
+                                                               guiclass="TransactionControllerGui", testclass="TransactionController",
+                                                               testname=comment or "Transaction", enabled="true")
+                ET.SubElement(current_transaction_controller, 'boolProp', name="TransactionController.includeTimers").text = "false"
+                ET.SubElement(current_transaction_controller, 'boolProp', name="TransactionController.parent").text = "false"
+                hash_tree_for_transaction = ET.SubElement(hash_tree_for_samplers, 'hashTree')
+
+            # Create HTTP Sampler
+            http_sampler = ET.SubElement(hash_tree_for_transaction, 'HTTPSamplerProxy',
+                                         guiclass="HttpTestSampleGui", testclass="HTTPSamplerProxy",
+                                         testname=f"HTTP Request - {comment}", enabled="true")
+
+            if request_method == 'POST':
+                ET.SubElement(http_sampler, 'boolProp', name="HTTPSampler.postBodyRaw").text = "true"
+                arguments = ET.SubElement(http_sampler, 'elementProp', name="HTTPsampler.Arguments", elementType="Arguments")
+                collection = ET.SubElement(arguments, 'collectionProp', name="Arguments.arguments")
+                arg = ET.SubElement(collection, 'elementProp', name="", elementType="HTTPArgument")
+                ET.SubElement(arg, 'boolProp', name="HTTPArgument.always_encode").text = "false"
+                ET.SubElement(arg, 'stringProp', name="Argument.value").text = body
+                ET.SubElement(arg, 'stringProp', name="Argument.metadata").text = "="
+
+            ET.SubElement(http_sampler, 'stringProp', name="HTTPSampler.domain").text = domain
+            ET.SubElement(http_sampler, 'stringProp', name="HTTPSampler.port").text = "80" if url.startswith("http://") else "443"
+            ET.SubElement(http_sampler, 'stringProp', name="HTTPSampler.protocol").text = "http" if url.startswith("http://") else "https"
+            ET.SubElement(http_sampler, 'stringProp', name="HTTPSampler.path").text = path
+            ET.SubElement(http_sampler, 'stringProp', name="HTTPSampler.method").text = request_method
+            ET.SubElement(http_sampler, 'boolProp', name="HTTPSampler.follow_redirects").text = "true"
+            ET.SubElement(http_sampler, 'boolProp', name="HTTPSampler.auto_redirects").text = "false"
+            ET.SubElement(http_sampler, 'boolProp', name="HTTPSampler.use_keepalive").text = "true"
+            ET.SubElement(http_sampler, 'boolProp', name="HTTPSampler.DO_MULTIPART_POST").text = "false"
+
+            # Add HTTP Header Manager
+            header_manager = ET.SubElement(hash_tree_for_transaction, 'HeaderManager',
+                                           guiclass="HeaderPanel", testclass="HeaderManager", testname="HTTP Header Manager", enabled="true")
+            header_collection = ET.SubElement(header_manager, 'collectionProp', name="HeaderManager.headers")
+            for key, value in headers.items():
+                header = ET.SubElement(header_collection, 'elementProp', name="", elementType="Header")
+                ET.SubElement(header, 'stringProp', name="Header.name").text = key
+                ET.SubElement(header, 'stringProp', name="Header.value").text = value
+
+            # Add hashTrees
+            ET.SubElement(hash_tree_for_transaction, 'hashTree')  # For HTTPSampler
+            ET.SubElement(hash_tree_for_transaction, 'hashTree')  # For HeaderManager
+
+            last_comment = comment
+
+        # Write the XML to a file
+        jmx_file_path = os.path.splitext(saz_file_path)[0] + ".jmx"
+        tree = ET.ElementTree(test_plan)
+        tree.write(jmx_file_path, encoding="utf-8", xml_declaration=True)
+
+        print(f"\n✅ JMeter test plan saved to: {jmx_file_path}")
+        print(f"🌐 Unique domains in test plan: {', '.join(sorted(unique_hosts))}")
+
+    except Exception as e:
+        print(f"Error generating JMeter test plan: {e}")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python fiddler2jmeter.py <file.saz>")
+        sys.exit(1)
+
+    saz_file_path = sys.argv[1]
+    allowed_hosts = []  # Empty = allow all
+    allowed_status_codes = ["200", "302"]
+    skip_file_types = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.css', '.js', '.woff', '.woff2', '.ttf', '.otf', '.svg']
+
+    sessions = extract_sessions_from_saz(saz_file_path, allowed_hosts, skip_file_types)
+    generate_jmeter_test_plan(sessions, allowed_status_codes, saz_file_path)
+==================
+
+import os
 import xml.etree.ElementTree as ET
 import zipfile
 from urllib.parse import urlparse
