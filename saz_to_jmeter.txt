@@ -1,3 +1,9 @@
+hosts = []
+if len(sys.argv) > 2:
+    hosts = [h.strip() for h in sys.argv[2].split(',') if h.strip()]
+
+==
+
 import os
 import sys
 import zipfile
