@@ -1,3 +1,74 @@
+with subprocess - 
+if __name__ == "__main__":
+    import sys
+    saz_file_path = sys.argv[1]
+    allowed_hosts_arg = sys.argv[2] if len(sys.argv) > 2 else ''
+    allowed_hosts = allowed_hosts_arg.split(';') if allowed_hosts_arg else []
+    skip_file_types = sys.argv[3].split(';') if len(sys.argv) > 3 else []
+    allowed_status_codes = sys.argv[4].split(';') if len(sys.argv) > 4 else []
+    main(saz_file_path, allowed_hosts, allowed_status_codes, skip_file_types)
+
+import streamlit as st
+import os
+import subprocess
+import tempfile
+
+st.title("Fiddler to JMeter Converter")
+
+# Default filters
+DEFAULT_ALLOWED_HOSTS = "www.demoblaze.com;api.demoblaze.com;www.blazedemo.com"
+DEFAULT_ALLOWED_STATUS_CODES = "200;302"
+DEFAULT_SKIP_FILE_TYPES = ".jpg;.jpeg;.png;.gif;.bmp;.ico;.css;.js;.woff;.woff2;.ttf;.otf;.svg"
+
+# Path to your script
+SCRIPT_PATH = os.path.join(os.path.dirname(__file__), "scripts", "fiddler2jm_engine.py")
+
+uploaded_file = st.file_uploader("Upload your SAZ file", type=["saz"])
+allowed_status_codes = st.text_input("Allowed Status Codes", DEFAULT_ALLOWED_STATUS_CODES)
+skip_file_extensions = st.text_input("Skip File Extensions", DEFAULT_SKIP_FILE_TYPES)
+included_domains = st.text_input("Included Domains", DEFAULT_ALLOWED_HOSTS)
+
+if uploaded_file and st.button("Convert to JMeter Test Plan"):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        saz_path = os.path.join(temp_dir, uploaded_file.name)
+        with open(saz_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        # Prepare CLI arguments
+        args = [
+            "python", SCRIPT_PATH,
+            saz_path,
+            included_domains,
+            skip_file_extensions,
+            allowed_status_codes
+        ]
+
+        # Run subprocess
+        process = subprocess.run(args, capture_output=True, text=True)
+
+        # Check for errors
+        if process.returncode == 0:
+            jmx_path = saz_path.replace(".saz", ".jmx")
+            if os.path.exists(jmx_path):
+                with open(jmx_path, "rb") as jmx_file:
+                    st.download_button(
+                        label="Download JMeter Test Plan",
+                        data=jmx_file,
+                        file_name=os.path.basename(jmx_path),
+                        mime="application/xml"
+                    )
+                st.success("JMeter test plan generated successfully!")
+            else:
+                st.error("The JMX file was not created.")
+        else:
+            st.error("Conversion failed:")
+            st.code(process.stderr or process.stdout)
+
+st.info("Upload a SAZ file, set filters, and generate a JMeter test plan.")
+
+==
+
+
 Make sure your script file (fiddler2jm_engine.py) has the main functions exposed like this at the bottom:
 def main(saz_file_path, allowed_hosts, allowed_status_codes, skip_file_types):
     sessions = extract_sessions_from_saz(saz_file_path, allowed_hosts, skip_file_types)
