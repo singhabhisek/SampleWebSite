@@ -1,3 +1,19 @@
+# Add headers if any
+if headers:
+    header_manager = ET.SubElement(hash_tree_for_transaction, 'HeaderManager',
+                                   guiclass="HeaderPanel", testclass="HeaderManager", testname="HTTP Header Manager", enabled="true")
+    headers_prop = ET.SubElement(header_manager, 'collectionProp', name="HeaderManager.headers")
+    
+    for key, value in headers.items():
+        header_element = ET.SubElement(headers_prop, 'elementProp', name="", elementType="Header")
+        ET.SubElement(header_element, 'stringProp', name="Header.name").text = key
+        ET.SubElement(header_element, 'stringProp', name="Header.value").text = value
+    
+    # Add empty hashTree after header manager
+    ET.SubElement(hash_tree_for_transaction, 'hashTree')
+
+==
+
 hosts = []
 if len(sys.argv) > 2:
     hosts = [h.strip() for h in sys.argv[2].split(',') if h.strip()]
