@@ -1,3 +1,81 @@
+Make sure your script file (fiddler2jm_engine.py) has the main functions exposed like this at the bottom:
+def main(saz_file_path, allowed_hosts, allowed_status_codes, skip_file_types):
+    sessions = extract_sessions_from_saz(saz_file_path, allowed_hosts, skip_file_types)
+    generate_jmeter_test_plan(sessions, allowed_hosts, allowed_status_codes, saz_file_path)
+
+if __name__ == "__main__":
+    import sys
+    saz_file_path = sys.argv[1]
+    allowed_hosts_arg = sys.argv[2] if len(sys.argv) > 2 else ''
+    allowed_hosts = allowed_hosts_arg.split(';') if allowed_hosts_arg else []
+    skip_file_types = sys.argv[3].split(';') if len(sys.argv) > 3 else []
+    allowed_status_codes = sys.argv[4].split(';') if len(sys.argv) > 4 else []
+    main(saz_file_path, allowed_hosts, allowed_status_codes, skip_file_types)
+--
+import streamlit as st
+import os
+import tempfile
+
+# Import your processing functions
+from scripts.fiddler2jm_engine import main as convert_saz_to_jmx
+
+st.title("Fiddler to JMeter Converter")
+
+# Default values
+DEFAULT_ALLOWED_HOSTS = "www.demoblaze.com;api.demoblaze.com;www.blazedemo.com"
+DEFAULT_ALLOWED_STATUS_CODES = "200;302"
+DEFAULT_SKIP_FILE_TYPES = ".jpg;.jpeg;.png;.gif;.bmp;.ico;.css;.js;.woff;.woff2;.ttf;.otf;.svg"
+
+# Upload section
+uploaded_file = st.file_uploader("Upload your SAZ file", type=["saz"])
+
+# Filters
+allowed_status_codes = st.text_input("Allowed Status Codes (semicolon-separated)", DEFAULT_ALLOWED_STATUS_CODES)
+skip_file_extensions = st.text_input("Skip File Extensions (semicolon-separated)", DEFAULT_SKIP_FILE_TYPES)
+included_domains = st.text_input("Included Domains (semicolon-separated)", DEFAULT_ALLOWED_HOSTS)
+
+if uploaded_file and st.button("Convert to JMeter Test Plan"):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        saz_path = os.path.join(temp_dir, uploaded_file.name)
+        
+        # Save uploaded SAZ file to temp
+        with open(saz_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+
+        # Parse input fields
+        allowed_status_codes_list = [code.strip() for code in allowed_status_codes.split(";")]
+        skip_file_types_list = [ext.strip() for ext in skip_file_extensions.split(";")]
+        included_domains_list = [host.strip() for host in included_domains.split(";")]
+
+        try:
+            # Run the main conversion logic
+            convert_saz_to_jmx(
+                saz_file_path=saz_path,
+                allowed_hosts=included_domains_list,
+                allowed_status_codes=allowed_status_codes_list,
+                skip_file_types=skip_file_types_list
+            )
+
+            jmx_file_path = saz_path.replace(".saz", ".jmx")
+            with open(jmx_file_path, "rb") as jmx_file:
+                st.download_button(
+                    label="Download JMeter Test Plan",
+                    data=jmx_file,
+                    file_name=os.path.basename(jmx_file_path),
+                    mime="application/xml"
+                )
+            st.success("JMeter test plan generated successfully!")
+
+        except Exception as e:
+            st.error(f"An error occurred during conversion: {e}")
+
+st.info("Upload a SAZ file, set filters, and convert it into a JMeter test plan.")
+
+--
+
+
+
+
 import os
 import xml.etree.ElementTree as ET
 import zipfile
